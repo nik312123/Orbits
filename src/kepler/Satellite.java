@@ -52,8 +52,11 @@ class Satellite {
      * @param radiusTwo  One of the actual radii of the elliptical orbits in meters
      */
     Satellite(double radiusOne, double radiusTwo) {
+        //Sets the major axis to the larger of the two given radii
         radiusMajor = Math.max(radiusOne, radiusTwo);
         radiusMinor = radiusOne + radiusTwo - radiusMajor;
+        
+        //Sets visual major and minor axes based on which way the full elliptical orbit fits
         if(radiusMinor / radiusMajor * (Runner.frameWidth()/2 - SATELLITE_SHAPE.getWidth() - 20) <= Runner.frameHeight()/2 - SATELLITE_SHAPE.getHeight() - 20) {
             radiusMajorVisual = Runner.frameWidth()/2 - SATELLITE_SHAPE.getWidth() - 20;
             radiusMinorVisual = radiusMinor / radiusMajor * radiusMajorVisual;
