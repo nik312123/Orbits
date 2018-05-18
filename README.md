@@ -1,3 +1,3 @@
-# Rollercoaster
+# Orbits
 
-Creating a roller-coaster simulator that uses energy, rotational motion, and circular motion concepts for the AP Physics Final Project
+Creating a planet orbit simulator for the AP Physics project
