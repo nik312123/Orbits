@@ -1,16 +1,30 @@
 package kepler;
 
+import javax.imageio.ImageIO;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 /**
  * The class that represents the satellite that orbits the planet
  */
 class Satellite {
+    /**
+     * The height and width of the ellipse that is the satellite
+     */
+    private static final int SATELLITE_HEIGHT_WIDTH = 30;
+    
+    /**
+     * The last time of System.nanoTime() that was recorded last
+     */
+    private long lastTime;
+    
     /**
      * The physics gravitational constant accurate to some degree
      */
@@ -37,9 +51,19 @@ class Satellite {
     private double radiusMajorVisual, radiusMinorVisual;
     
     /**
-     * An ellipse that represents the satellite's shape
+     * Represents whether or not it is the first time that the Satellite.draw() method has been called
      */
-    private static final Ellipse2D SATELLITE_SHAPE = new Ellipse2D.Double(0, 0, 30, 30);
+    private boolean isFirstTime = true;
+    
+    /**
+     * The ellipse representing the orbit that the satellite takes
+     */
+    private Ellipse2D orbit;
+    
+    /**
+     * Thickness of the line drawn for the orbit
+     */
+    private BasicStroke orbitThickness = new BasicStroke(2);
     
     /**
      * Represents the planet that the satellite orbits
@@ -47,25 +71,43 @@ class Satellite {
     private Planet planet;
     
     /**
-     * Satellite constructor that sets the actual and visual axes
+     * Image that shows the satellite that orbits the planet (actually a planet but whatever)
+     */
+    private static BufferedImage satelliteImage;
+    
+    /**
+     * Satellite constructor that sets the actual and visual axes, gets the satellite image, and sets up the orbit ellipse
      * @param radiusOne  One of the actual radii of the elliptical orbits in meters
      * @param radiusTwo  One of the actual radii of the elliptical orbits in meters
      */
     Satellite(double radiusOne, double radiusTwo) {
+        try {
+            satelliteImage = ImageIO.read(Runner.class.getResource("/planet.png"));
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+        
         //Sets the major axis to the larger of the two given radii
         radiusMajor = Math.max(radiusOne, radiusTwo);
         radiusMinor = radiusOne + radiusTwo - radiusMajor;
         
         //Sets visual major and minor axes based on which way the full elliptical orbit fits
-        if(radiusMinor / radiusMajor * (Runner.frameWidth()/2 - SATELLITE_SHAPE.getWidth() - 20) <= Runner.frameHeight()/2 - SATELLITE_SHAPE.getHeight() - 20) {
-            radiusMajorVisual = Runner.frameWidth()/2 - SATELLITE_SHAPE.getWidth() - 20;
+        if(radiusMinor / radiusMajor * (Runner.frameWidth()/2 - SATELLITE_HEIGHT_WIDTH - 20) <= Runner.frameHeight()/2 - SATELLITE_HEIGHT_WIDTH - 20) {
+            radiusMajorVisual = Runner.frameWidth()/2 - SATELLITE_HEIGHT_WIDTH - 20;
             radiusMinorVisual = radiusMinor / radiusMajor * radiusMajorVisual;
         }
         else {
-            radiusMinorVisual = Runner.frameHeight()/2 - SATELLITE_SHAPE.getHeight() - 20;
+            radiusMinorVisual = Runner.frameHeight()/2 - SATELLITE_HEIGHT_WIDTH - 20;
             radiusMajorVisual = radiusMajor / radiusMinor * radiusMinorVisual;
         }
-        visualRadius = radiusMajorVisual;
+        planet = Runner.getPlanet();
+        planet.setCenterCoordinates(this);
+        changeVisualRadius();
+        System.out.println(visualRadius);
+        orbit = new Ellipse2D.Double((Runner.frameWidth() - 2 * radiusMajorVisual)/2.0, (Runner.frameHeight() - 2 * radiusMinorVisual)/2.0, 2 * radiusMajorVisual, 2 * radiusMinorVisual);
+        System.out.println(orbit.getY());
+        System.out.println(orbit.getY() + orbit.getHeight());
     }
     
     /**
@@ -78,10 +120,15 @@ class Satellite {
     }
     
     /**
-     * Changes the instantaneous radius based on the angle using r = ab/sqrt(a^2sin^2(theta) + b^2cos^2(theta))
+     * Changes the instantaneous radius based on the angle using r = (2 * h * b^2 + sqrt(2) * a * b * sqrt(a^2 * (1 - cos(2 * theta)) + b^2 * (1 + cos(2 * theta)) + h^2 * (cos(2 * theta) - 1))) / (2 * (a^2 * sin^2(theta) + b^2cos^2(theta))
+     * (Modified from the ususal ab/sqrt(a^2sin^2(theta) + b^2cos^2(theta)) to shift the ellipse such that the radius is relative to the right focus)
      */
     private void changeVisualRadius() {
-        visualRadius = radiusMajorVisual * radiusMinorVisual / Math.sqrt(Math.pow(radiusMajorVisual * Math.sin(angle), 2) + Math.pow(radiusMinorVisual * Math.cos(angle), 2));
+        double focusLength = -(planet.getCenterX() - Runner.frameWidth()/2.0);
+        double majorSquared = Math.pow(radiusMajorVisual, 2);
+        double minorSquared = Math.pow(radiusMinorVisual, 2);
+        double cosTwoTheta = Math.cos(2 * angle);
+        visualRadius = (2 * focusLength * minorSquared * Math.cos(angle) + Math.sqrt(2) * radiusMajorVisual * radiusMinorVisual * Math.sqrt(majorSquared * (1 - cosTwoTheta) + minorSquared * (1 + cosTwoTheta) + Math.pow(focusLength, 2) * (cosTwoTheta - 1))) / (2 * (majorSquared * Math.pow(Math.sin(angle), 2) + minorSquared * Math.pow(Math.cos(angle), 2)));
     }
     
     /**
@@ -93,20 +140,23 @@ class Satellite {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         AffineTransform trans = new AffineTransform();
         changeVisualRadius();
-        trans.translate(visualRadius * Math.cos(angle) + (Runner.frameWidth() - SATELLITE_SHAPE.getWidth())/2.0, visualRadius * -Math.sin(angle) + (Runner.frameHeight() - SATELLITE_SHAPE.getHeight())/2.0);
-        g2d.setColor(Color.BLUE);
-        g2d.fill(trans.createTransformedShape(SATELLITE_SHAPE));
-        angle += 0.01 * getSatelliteVelocity();
+        g2d.setColor(Color.WHITE);
+        g2d.setStroke(orbitThickness);
+        g2d.draw(orbit);
+        trans.translate(visualRadius * Math.cos(angle) + planet.getCenterX() - satelliteImage.getWidth()/2.0, visualRadius * -Math.sin(angle) + planet.getCenterY() - satelliteImage.getHeight()/2.0);
+        g2d.drawImage(satelliteImage, trans, null);
+        if(isFirstTime) {
+            isFirstTime = false;
+            angle += 0.01 * getSatelliteVelocity();
+            lastTime = System.nanoTime();
+        }
+        else {
+            long currentTime = System.nanoTime();
+            angle += (currentTime - lastTime)/1000000000.0 * getSatelliteVelocity();
+            lastTime = currentTime;
+        }
         if(angle >= 2 * Math.PI)
             angle -= 2 * Math.PI;
-    }
-    
-    /**
-     * Sets the planet object variable to the planet object initialized in Runner
-     * @param p  Represents the planet that the satellite orbits
-     */
-    void setPlanet(Planet p) {
-        planet = p;
     }
     
     /**
@@ -130,7 +180,7 @@ class Satellite {
      * @return  The center x-value of the satellite
      */
     private double getCenterX() {
-        return visualRadius * Math.cos(angle) + Runner.frameWidth()/2.0;
+        return visualRadius * Math.cos(angle) + planet.getCenterX();
     }
     
     /**
@@ -138,7 +188,7 @@ class Satellite {
      * @return  The center y-value of the satellite
      */
     private double getCenterY() {
-        return visualRadius * -Math.sin(angle) + Runner.frameHeight()/2.0;
+        return visualRadius * -Math.sin(angle) + planet.getCenterY();
     }
 
 }

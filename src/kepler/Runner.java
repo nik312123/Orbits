@@ -1,5 +1,6 @@
 package kepler;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -8,6 +9,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 /**
  * Class that is used for initialization and running the program
@@ -39,10 +42,22 @@ class Runner extends JPanel implements ActionListener {
     private static Satellite satellite;
     
     /**
+     * The image representing the background
+     */
+    private static BufferedImage spaceBackground;
+    
+    /**
      * Responsible for initializing everything
      * @param args  Required command-line args for main method
      */
     public static void main(String... args) {
+        try {
+            spaceBackground = ImageIO.read(Runner.class.getResource("/spaceBackground.png"));
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+        
         //Initializes and sets up the Runner object that is mainly used as a JPanel
         Runner r = new Runner();
         r.setSize(1366, 690);
@@ -53,12 +68,8 @@ class Runner extends JPanel implements ActionListener {
         mainFrame.setSize(1366, 690);
     
         //Initializes satellite and planet objects
-        satellite = new Satellite(20, 30);
         planet = new Planet(500000000000000.0);
-    
-        //Allows the satellite and planet objects access to each other
-        satellite.setPlanet(planet);
-        planet.setCenterCoordinates(satellite);
+        satellite = new Satellite(20, 30);
         
         //Sets the timer to a delay of 10 seconds that triggers the Runner object's actionPerformed method upon every 'tick'
         repaintTimer = new Timer(10, r);
@@ -72,6 +83,7 @@ class Runner extends JPanel implements ActionListener {
         mainFrame.setLocation(dim.width / 2 - mainFrame.getWidth() / 2, 5);
         mainFrame.setLayout(null);
         mainFrame.setAlwaysOnTop(true);
+        mainFrame.setResizable(false);
         
         //Starts the repaintTimer
         repaintTimer.start();
@@ -94,6 +106,7 @@ class Runner extends JPanel implements ActionListener {
             mainFrame.setAlwaysOnTop(false);
         
         //Draws the planet and satellite
+        g.drawImage(spaceBackground, 0, 0, null);
         planet.draw(g);
         satellite.draw(g);
     }
@@ -121,6 +134,14 @@ class Runner extends JPanel implements ActionListener {
      */
     static int frameHeight() {
         return mainFrame.getHeight();
+    }
+    
+    /**
+     * Returns planet object
+     * @return Planet object
+     */
+    static Planet getPlanet() {
+        return planet;
     }
     
 }

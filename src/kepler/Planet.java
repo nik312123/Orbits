@@ -1,10 +1,12 @@
 package kepler;
 
+import javax.imageio.ImageIO;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 /**
  * The class that represents the planet that the satellite orbits
@@ -21,15 +23,21 @@ class Planet {
     private double centerX, centerY;
     
     /**
-     * An ellipse that represents the planet's shape
+     * Image that shows the planet being orbited (actually a picture of a star but whatever)
      */
-    private static final Ellipse2D PLANET_SHAPE = new Ellipse2D.Double(0, 0, 50, 50);
+    private static BufferedImage planetImage;
     
     /**
-     * Planet constructor that accepts mass of the planet as input
+     * Planet constructor that takes in the mass of the planet as an input and gets the planet picture
      * @param m  The mass of the planet
      */
     Planet(double m) {
+        try {
+            planetImage = ImageIO.read(Runner.class.getResource("/star.png"));
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
         mass = m;
     }
     
@@ -41,8 +49,8 @@ class Planet {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         AffineTransform trans = new AffineTransform();
-        trans.translate(centerX - PLANET_SHAPE.getWidth()/2, centerY - PLANET_SHAPE.getHeight()/2);
-        g2d.fill(trans.createTransformedShape(PLANET_SHAPE));
+        trans.translate(centerX - planetImage.getWidth()/2, centerY - planetImage.getHeight()/2);
+        g2d.drawImage(planetImage, trans, null);
     }
     
     /**
