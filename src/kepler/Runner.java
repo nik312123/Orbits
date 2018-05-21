@@ -1,8 +1,10 @@
 package kepler;
 
 import nikunj.classes.GradientButton;
+import nikunj.classes.Sound;
 
 import javax.imageio.ImageIO;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -21,6 +23,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * Class that is used for initialization and running the program
@@ -50,6 +53,16 @@ class Runner extends JPanel implements ActionListener {
      * JFrame container that contains all the components that are displayed on screen
      */
     private static JFrame mainFrame;
+    
+    /**
+     * Main background soundtrack
+     */
+    private static Sound main;
+    
+    /**
+     * Sound effect for button clicking
+     */
+    private static Sound click;
     
     /**
      * The image representing the background
@@ -90,13 +103,17 @@ class Runner extends JPanel implements ActionListener {
      * Responsible for initializing everything
      * @param args Required command-line args for main method
      */
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException, UnsupportedAudioFileException {
         //Gets optimized images
         spaceBackground = getCompatibleImage("/spaceBackground.png");
         BufferedImage close = getCompatibleImage("/headerButtons/close.png");
         BufferedImage draggable = getCompatibleImage("/headerButtons/draggable.png");
         BufferedImage music = getCompatibleImage("/headerButtons/music.png");
         BufferedImage sfx = getCompatibleImage("/headerButtons/sfx.png");
+        
+        //Gets audio files
+        main = new Sound(getResource("/main.wav"), true);
+        click = new Sound(getResource("/click.wav"), false);
         
         //Initializes and sets up the Runner object that is mainly used as a JPanel
         Runner r = new Runner();
@@ -114,7 +131,7 @@ class Runner extends JPanel implements ActionListener {
         repaintTimer = new Timer(2, r);
         
         //Createst the close button that closes the application when clicked
-        closeButton = new GradientButton(close, Color.BLACK, Color.RED, 2, 2, 24, 24) {
+        closeButton = new GradientButton(close, Color.BLACK, Color.RED, 35, 2, 2, 24, 24) {
             private static final long serialVersionUID = 1L;
             
             @Override
@@ -143,7 +160,7 @@ class Runner extends JPanel implements ActionListener {
         };
         
         //Creates the draggable button that drags the entire application window when pressing down and moving the mouse on the button
-        draggableButton = new GradientButton(draggable, Color.BLACK, Color.BLUE, 30, 2, 24, 24) {
+        draggableButton = new GradientButton(draggable, Color.BLACK, Color.BLUE, 35, 30, 2, 24, 24) {
             private static final long serialVersionUID = 1L;
             
             private Point originalLocation;
@@ -180,17 +197,16 @@ class Runner extends JPanel implements ActionListener {
         };
         
         //Creates the music button that mutes and unmutes the background audio when clicked
-        musicButton = new GradientButton(music, Color.BLACK, new Color(0, 208, 208), mainFrame.getWidth() - 54, 2, 24, 24) {
+        musicButton = new GradientButton(music, Color.BLACK, new Color(0, 208, 208), 35, mainFrame.getWidth() - 54, 2, 24, 24) {
             private static final long serialVersionUID = 1L;
             
             @Override
             public void mouseClicked(MouseEvent e) {
-                if(musicMuted) {
-                
-                }
-                else {
-                
-                }
+                if(musicMuted)
+                    main.changeVolume(1.0);
+                else
+                    main.changeVolume(0);
+                click.play();
                 musicMuted = !musicMuted;
             }
             
@@ -224,17 +240,18 @@ class Runner extends JPanel implements ActionListener {
         };
         
         //Creates the sfx button that mutes and unmutes the sound effects when clicked
-        sfxButton = new GradientButton(sfx, Color.BLACK, Color.GREEN, mainFrame.getWidth() - 26, 2, 24, 24) {
+        sfxButton = new GradientButton(sfx, Color.BLACK, Color.GREEN, 35, mainFrame.getWidth() - 26, 2, 24, 24) {
             private static final long serialVersionUID = 1L;
             
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(sfxMuted) {
-                
+                    click.changeVolume(1.0);
                 }
                 else {
-                
+                    click.changeVolume(0.0);
                 }
+                click.play();
                 sfxMuted = !sfxMuted;
             }
             
@@ -296,6 +313,9 @@ class Runner extends JPanel implements ActionListener {
         
         //Starts the repaintTimer
         repaintTimer.start();
+        
+        //Plays the background soundtrack
+        main.play();
     }
     
     /**
@@ -307,7 +327,7 @@ class Runner extends JPanel implements ActionListener {
         //Gets unoptimized BufferedImage
         BufferedImage current = null;
         try {
-            current = ImageIO.read(Runner.class.getResource(resource));
+            current = ImageIO.read(getResource(resource));
         }
         catch(IOException e) {
             e.printStackTrace();
@@ -363,7 +383,7 @@ class Runner extends JPanel implements ActionListener {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-        mainFrame.repaint();
+        repaint();
     }
     
     /**
@@ -388,6 +408,10 @@ class Runner extends JPanel implements ActionListener {
      */
     static Planet getPlanet() {
         return planet;
+    }
+    
+    private static URL getResource(String resource) {
+        return Runner.class.getResource(resource);
     }
     
 }
