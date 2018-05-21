@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="nikunj_classes">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/nikunj_classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/nikunj_classes.jar!/" />
+    </SOURCES>
+  </library>
+</component>
