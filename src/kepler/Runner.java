@@ -367,7 +367,7 @@ class Runner extends JPanel implements ActionListener {
         else
             mainFrame.setAlwaysOnTop(false);
         
-        //Draws the planet and satellite
+        //Draws the planet, satellite, buttons, background, etc.
         g.drawImage(spaceBackground, 0, 0, null);
         planet.draw(g);
         satellite.draw(g);
@@ -410,6 +410,11 @@ class Runner extends JPanel implements ActionListener {
         return planet;
     }
     
+    /**
+     * Returns a URL to whichever resource is given
+     * @param resource Resource absolute path relative to project directory
+     * @return URL to requested resource
+     */
     private static URL getResource(String resource) {
         return Runner.class.getResource(resource);
     }
