@@ -434,7 +434,6 @@ class Runner extends JPanel implements ActionListener {
         
         //Plays the background soundtrack
         main.play();
-        credits.setExpanding(true);
     }
     
     /**
