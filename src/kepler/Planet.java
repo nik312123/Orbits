@@ -4,12 +4,18 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 
 /**
  * The class that represents the planet that the satellite orbits
  */
 class Planet {
+    /**
+     * The height and width of the ellipse that is the planet
+     */
+    private static final int PLANET_HEIGHT_WIDTH = 75;
+    
     /**
      * The mass in kg of the planet
      */
@@ -24,6 +30,16 @@ class Planet {
      * Image that shows the planet being orbited (actually a picture of a star but whatever)
      */
     private static BufferedImage planetImage;
+    
+    /**
+     * The ellipse representing the planet that the satellite orbits
+     */
+    private Ellipse2D planet;
+    
+    /**
+     * The satellite that orbits the planet
+     */
+    private Satellite satellite;
     
     /**
      * Planet constructor that takes in the mass of the planet as an input and gets the planet picture
@@ -41,6 +57,7 @@ class Planet {
     void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        satellite.drawOrbit(g2d);
         AffineTransform trans = new AffineTransform();
         trans.translate(centerX - planetImage.getWidth() / 2, centerY - planetImage.getHeight() / 2);
         g2d.drawImage(planetImage, trans, null);
@@ -61,6 +78,8 @@ class Planet {
     void setCenterCoordinates(Satellite s) {
         centerX = Runner.frameWidth() / 2 + Math.sqrt(Math.pow(s.getRadiusMajorVisual(), 2) - Math.pow(s.getRadiusMinorVisual(), 2));
         centerY = Runner.frameHeight() / 2.0;
+        planet = new Ellipse2D.Double(centerX - Runner.frameWidth() / 2 - PLANET_HEIGHT_WIDTH / 2, -PLANET_HEIGHT_WIDTH / 2, PLANET_HEIGHT_WIDTH, PLANET_HEIGHT_WIDTH);
+        satellite = s;
     }
     
     /**
@@ -77,6 +96,14 @@ class Planet {
      */
     double getCenterY() {
         return centerY;
+    }
+    
+    /**
+     * Returns planet ellipse
+     * @return Planet ellipse
+     */
+    Ellipse2D getPlanet() {
+        return planet;
     }
     
 }

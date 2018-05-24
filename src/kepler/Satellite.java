@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 
@@ -29,9 +30,9 @@ class Satellite {
     private static final double GRAVITATIONAL_CONSTANT = 6.671281903963040991511534289 * Math.pow(10, -11);
     
     /**
-     * The angle from 0 to 2π of the satellite's center relative to the positive x-axis with an origin at the planet's center
+     * The orbitAngle from 0 to 2π of the satellite's center relative to the positive x-axis with an origin at the planet's center
      */
-    private double angle = 0;
+    private double orbitAngle = 0;
     
     /**
      * The instantaneous distance between the center of the elliptical orbit and the satellite in pixels
@@ -64,6 +65,11 @@ class Satellite {
     private Ellipse2D orbit;
     
     /**
+     * The ellipse representing the satellite
+     */
+    private Ellipse2D satellite;
+    
+    /**
      * Thickness of the line drawn for the orbit
      */
     private BasicStroke orbitThickness = new BasicStroke(2);
@@ -91,12 +97,12 @@ class Satellite {
         radiusMinor = radiusOne + radiusTwo - radiusMajor;
         
         //Sets visual major and minor axes based on which way the full elliptical orbit fits
-        if(radiusMinor / radiusMajor * (Runner.frameWidth() / 2 - SATELLITE_HEIGHT_WIDTH - 20) <= Runner.frameHeight() / 2 - SATELLITE_HEIGHT_WIDTH - 20) {
-            radiusMajorVisual = Runner.frameWidth() / 2 - SATELLITE_HEIGHT_WIDTH - 20;
+        if(radiusMinor / radiusMajor * (Runner.frameWidth() / 2 - SATELLITE_HEIGHT_WIDTH - 35) <= Runner.frameHeight() / 2 - SATELLITE_HEIGHT_WIDTH - 35) {
+            radiusMajorVisual = Runner.frameWidth() / 2 - SATELLITE_HEIGHT_WIDTH - 35;
             radiusMinorVisual = radiusMinor / radiusMajor * radiusMajorVisual;
         }
         else {
-            radiusMinorVisual = Runner.frameHeight() / 2 - SATELLITE_HEIGHT_WIDTH - 20;
+            radiusMinorVisual = Runner.frameHeight() / 2 - SATELLITE_HEIGHT_WIDTH - 35;
             radiusMajorVisual = radiusMajor / radiusMinor * radiusMinorVisual;
         }
         
@@ -105,9 +111,10 @@ class Satellite {
         planet.setCenterCoordinates(this);
         
         //Initializes radius and sets up orbit ellipse
-        visualRadius = getVisualRadius(angle);
+        visualRadius = getVisualRadius(orbitAngle);
         radius = visualRadius * radiusMajor / radiusMajorVisual;
         orbit = new Ellipse2D.Double((Runner.frameWidth() - 2 * radiusMajorVisual) / 2.0, (Runner.frameHeight() - 2 * radiusMinorVisual) / 2.0, 2 * radiusMajorVisual, 2 * radiusMinorVisual);
+        satellite = new Ellipse2D.Double(radiusMajorVisual - SATELLITE_HEIGHT_WIDTH / 2, -SATELLITE_HEIGHT_WIDTH / 2, SATELLITE_HEIGHT_WIDTH, SATELLITE_HEIGHT_WIDTH);
     }
     
     /**
@@ -119,7 +126,7 @@ class Satellite {
     }
     
     /**
-     * Changes the instantaneous radius based on the angle using r = (2 * h * b^2 + sqrt(2) * a * b * sqrt(a^2 * (1 - cos(2 * theta)) + b^2 * (1 + cos(2 * theta)) + h^2 * (cos(2 * theta) - 1))) / (2 * (a^2 * sin^2(theta) + b^2cos^2(theta))
+     * Changes the instantaneous radius based on the orbitAngle using r = (2 * h * b^2 + sqrt(2) * a * b * sqrt(a^2 * (1 - cos(2 * theta)) + b^2 * (1 + cos(2 * theta)) + h^2 * (cos(2 * theta) - 1))) / (2 * (a^2 * sin^2(theta) + b^2cos^2(theta))
      * (Modified from the usual ab/sqrt(a^2sin^2(theta) + b^2cos^2(theta)) to shift the ellipse such that the radius is relative to the right focus)
      */
     private double getVisualRadius(double theta) {
@@ -131,7 +138,7 @@ class Satellite {
     }
     
     /**
-     * Draws the satellite at the given angle and radius relative to the center of the ellipse and changes related values accordingly
+     * Draws the satellite at the given orbitAngle and radius relative to the center of the ellipse and changes related values accordingly
      * @param g The graphics object used for drawing
      */
     void draw(Graphics g) {
@@ -140,21 +147,18 @@ class Satellite {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
         //Gets the visual and actual radii
-        visualRadius = getVisualRadius(angle);
+        visualRadius = getVisualRadius(orbitAngle);
         radius = visualRadius * radiusMajor / radiusMajorVisual;
         
-        //Draws the ellipse representing the orbit
-        g2d.setColor(Color.WHITE);
-        g2d.setStroke(orbitThickness);
-        g2d.draw(orbit);
-        
         /*
-         * Transformation made to get x and y position of satellite based on the radius and angle with the origin at the right
+         * Transformation made to get x and y position of satellite based on the radius and orbitAngle with the origin at the right
          * focus and used to draw the position of the satellite
          */
         AffineTransform trans = new AffineTransform();
-        trans.translate(visualRadius * Math.cos(angle) + planet.getCenterX() - satelliteImage.getWidth() / 2.0, visualRadius * -Math.sin(angle) + planet.getCenterY() - satelliteImage.getHeight() / 2.0);
+        trans.translate(visualRadius * Math.cos(orbitAngle) + planet.getCenterX() - satelliteImage.getWidth() / 2.0, visualRadius * -Math.sin(orbitAngle) + planet.getCenterY() - satelliteImage.getHeight() / 2.0);
         g2d.drawImage(satelliteImage, trans, null);
+        
+        satellite.setFrame(radiusMajorVisual - SATELLITE_HEIGHT_WIDTH / 2, -SATELLITE_HEIGHT_WIDTH / 2, SATELLITE_HEIGHT_WIDTH, SATELLITE_HEIGHT_WIDTH);
         
         double v = Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() * (2 / radius - 1 / radiusMajor));
         double vTransverse = getAngularVelocity() * radius;
@@ -173,18 +177,28 @@ class Satellite {
          */
         if(isFirstTime) {
             isFirstTime = false;
-            angle += 0.002 * getAngularVelocity();
+            orbitAngle += 0.002 * getAngularVelocity();
             lastTime = System.nanoTime();
         }
         else {
             long currentTime = System.nanoTime();
-            angle += (currentTime - lastTime) / 1000000000.0 * getAngularVelocity();
+            orbitAngle += (currentTime - lastTime) / 1000000000.0 * getAngularVelocity();
             lastTime = currentTime;
         }
         
-        //If the angle is greater than 2π, subtract 2π since there is no need to let the angle have a chance of overflowing
-        if(angle >= 2 * Math.PI)
-            angle -= 2 * Math.PI;
+        //If the orbitAngle is greater than 2π, subtract 2π since there is no need to let it have a chance of overflowing
+        if(orbitAngle >= 2 * Math.PI)
+            orbitAngle -= 2 * Math.PI;
+    }
+    
+    /**
+     * Draws the ellipse representing the orbit
+     * @param g2d The graphics object used for drawing
+     */
+    void drawOrbit(Graphics2D g2d) {
+        g2d.setColor(Color.WHITE);
+        g2d.setStroke(orbitThickness);
+        g2d.draw(orbit);
     }
     
     /**
@@ -201,6 +215,16 @@ class Satellite {
      */
     double getRadiusMinorVisual() {
         return radiusMinorVisual;
+    }
+    
+    /**
+     * Finds out if the satellite and planet ellipses would intersect and the point at wwhich they are closest.
+     * @return Whether or not the satellite and planet would intersect
+     */
+    boolean intersectsPlanet() {
+        Area satelliteArea = new Area(satellite);
+        satelliteArea.intersect(new Area(planet.getPlanet()));
+        return !satelliteArea.isEmpty();
     }
     
 }

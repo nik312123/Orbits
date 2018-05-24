@@ -1,6 +1,7 @@
 package kepler;
 
 import nikunj.classes.GradientButton;
+import nikunj.classes.PopUp;
 import nikunj.classes.Sound;
 
 import javax.imageio.ImageIO;
@@ -11,6 +12,8 @@ import javax.swing.Timer;
 import javax.swing.WindowConstants;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -20,9 +23,12 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
@@ -33,6 +39,16 @@ class Runner extends JPanel implements ActionListener {
      * Counter that forces the JFrame on top of other content while it is greater than zero
      */
     private static int alwaysOnTop = 50;
+    
+    /**
+     * The x-position of the credit text
+     */
+    private final static int CREDIT_TEXT_X = 340;
+    
+    /**
+     * The y-position of the first credit text item
+     */
+    private final static int CREDIT_TEXT_ORIGINAL_Y = 60;
     
     /**
      * Represents whether or not the music is muted
@@ -55,6 +71,11 @@ class Runner extends JPanel implements ActionListener {
     private static JFrame mainFrame;
     
     /**
+     * The JPanels clicked for to open a credits link
+     */
+    private static JPanel[] clickableNames = new JPanel[5];
+    
+    /**
      * Main background soundtrack
      */
     private static Sound main;
@@ -68,6 +89,11 @@ class Runner extends JPanel implements ActionListener {
      * The image representing the background
      */
     private static BufferedImage spaceBackground;
+    
+    /**
+     * The image representing the credits text
+     */
+    private static BufferedImage creditsText;
     
     /**
      * Represents the close window button in an application
@@ -90,6 +116,11 @@ class Runner extends JPanel implements ActionListener {
     private static GradientButton sfxButton;
     
     /**
+     * The pop up that is used for displaying the credits
+     */
+    private static PopUp credits;
+    
+    /**
      * Represents the planet that the satellite orbits
      */
     private static Planet planet;
@@ -110,6 +141,7 @@ class Runner extends JPanel implements ActionListener {
         BufferedImage draggable = getCompatibleImage("/headerButtons/draggable.png");
         BufferedImage music = getCompatibleImage("/headerButtons/music.png");
         BufferedImage sfx = getCompatibleImage("/headerButtons/sfx.png");
+        creditsText = getCompatibleImage("/credits.png");
         
         //Gets audio files
         main = new Sound(getResource("/main.wav"), true);
@@ -284,19 +316,105 @@ class Runner extends JPanel implements ActionListener {
             }
         };
         
+        //Initializes credits pop-up
+        credits = new PopUp(330, 30, mainFrame.getHeight() - 60, mainFrame.getHeight() - 60, 30, Color.BLACK, Color.ORANGE, 2);
+        
+        //Initializes and sets up clickable credits
+        for(int i = 0, y = CREDIT_TEXT_ORIGINAL_Y - 9; i < clickableNames.length; ++i, y += 40) {
+            //Initializes credit names
+            clickableNames[i] = new JPanel();
+            JPanel b = clickableNames[i];
+            b.setVisible(false);
+            b.setLocation((int) (CREDIT_TEXT_X + 1 - credits.getExpandedX()), (int) (y - credits.getExpandedY()));
+            b.setOpaque(false);
+            b.setName(Integer.toString(i));
+            
+            //Adds mouse listener such that the user's default browser opens a URL depending on which button is clicked
+            b.addMouseListener(new MouseListener() {
+                
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    String url = "";
+                    String name = ((JPanel) e.getSource()).getName();
+                    int nameInt = Integer.parseInt(name);
+                    switch(nameInt) {
+                        case 0:
+                            url = "https://natentine.com/royalty-free-music/zypheers-canyon";
+                            break;
+                        case 1:
+                            url = "http://www.freesfx.co.uk/sfx/button";
+                            break;
+                        case 2:
+                            url = "https://freesound.org/people/Autistic%20Lucario/sounds/142608/";
+                            break;
+                        case 3:
+                            url = "mailto:aaron4game@gmail.com";
+                            break;
+                        case 4:
+                            url = "mailto:nikchawla312@gmail.com";
+                            break;
+                    }
+                    try {
+                        if(!url.equals(""))
+                            Desktop.getDesktop().browse(new URI(url));
+                    }
+                    catch(IOException | URISyntaxException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                
+                @Override
+                public void mousePressed(MouseEvent e) {}
+                
+                @Override
+                public void mouseReleased(MouseEvent e) {}
+                
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    if(b.isVisible()) {
+                        mainFrame.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        credits.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    }
+                }
+                
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    mainFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    credits.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    b.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                }
+                
+            });
+        }
+        
+        //Sets size of clickable names
+        clickableNames[0].setSize(86, 9);
+        clickableNames[1].setSize(52, 9);
+        clickableNames[2].setSize(89, 9);
+        clickableNames[3].setSize(102, 9);
+        clickableNames[4].setSize(85, 9);
+        
+        //Adds clickable names to credits pop-up and sets the credits pop-up's layout to null for absolute positioning
+        for(JPanel b : clickableNames)
+            credits.add(b);
+        credits.setLayout(null);
+        
         //Sets all of the components' visibilities to true
         r.setVisible(true);
         closeButton.setVisible(true);
         draggableButton.setVisible(true);
         musicButton.setVisible(true);
         sfxButton.setVisible(true);
+        credits.setVisible(true);
         
-        //Adds Runner object and buttons to JFrame
+        //Adds components to JFrame
         mainFrame.add(r);
         mainFrame.add(closeButton);
         mainFrame.add(draggableButton);
         mainFrame.add(musicButton);
         mainFrame.add(sfxButton);
+        mainFrame.add(credits);
         
         //Sets up the remainder of the JFrame
         Dimension dim = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
@@ -316,6 +434,7 @@ class Runner extends JPanel implements ActionListener {
         
         //Plays the background soundtrack
         main.play();
+        credits.setExpanding(true);
     }
     
     /**
@@ -375,6 +494,14 @@ class Runner extends JPanel implements ActionListener {
         draggableButton.draw(g);
         musicButton.draw(g);
         sfxButton.draw(g);
+        credits.draw(g);
+        
+        //Sets clickable JPanels to visible and draws the credit text if credits pop-up is fully expanded
+        boolean creditsExpanded = credits.percentageExpanded() == 1.0;
+        if(creditsExpanded)
+            g.drawImage(creditsText, (int) Math.round(credits.getExpandedX()), (int) Math.round(credits.getExpandedY()), null);
+        for(JPanel b : clickableNames)
+            b.setVisible(creditsExpanded);
     }
     
     /**
