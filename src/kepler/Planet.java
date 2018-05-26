@@ -46,7 +46,8 @@ class Planet {
      * @param m The mass of the planet
      */
     Planet(double m) {
-        planetImage = Runner.getCompatibleImage("/star.png");
+        if(Runner.isFirstTime())
+            planetImage = Runner.getCompatibleImage("/star.png");
         mass = m;
     }
     
@@ -80,6 +81,16 @@ class Planet {
         centerY = Runner.frameHeight() / 2.0;
         planet = new Ellipse2D.Double(centerX - Runner.frameWidth() / 2 - PLANET_HEIGHT_WIDTH / 2, -PLANET_HEIGHT_WIDTH / 2, PLANET_HEIGHT_WIDTH, PLANET_HEIGHT_WIDTH);
         satellite = s;
+    }
+    
+    /**
+     * Sets the planet ellipse's position based on the hypothetical radii in settings
+     * @param radiusMajorVisual The semi-major radius in pixels
+     * @param radiusMinorVisual The semi-minor radius in pixels
+     */
+    void setPlanetEllipse(double radiusMajorVisual, double radiusMinorVisual) {
+        double centerX = Runner.frameWidth() / 2 + Math.sqrt(Math.pow(radiusMajorVisual, 2) - Math.pow(radiusMinorVisual, 2));
+        planet = new Ellipse2D.Double(centerX - Runner.frameWidth() / 2 - PLANET_HEIGHT_WIDTH / 2, -PLANET_HEIGHT_WIDTH / 2, PLANET_HEIGHT_WIDTH, PLANET_HEIGHT_WIDTH);
     }
     
     /**

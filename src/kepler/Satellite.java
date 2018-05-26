@@ -72,7 +72,7 @@ class Satellite {
     /**
      * Thickness of the line drawn for the orbit
      */
-    private BasicStroke orbitThickness = new BasicStroke(2);
+    private static final BasicStroke ORBIT_THICKNESS = new BasicStroke(2);
     
     /**
      * Represents the planet that the satellite orbits
@@ -90,7 +90,9 @@ class Satellite {
      * @param radiusTwo One of the actual radii of the elliptical orbits in meters
      */
     Satellite(double radiusOne, double radiusTwo) {
-        satelliteImage = Runner.getCompatibleImage("/planet.png");
+        if(Runner.isFirstTime())
+            satelliteImage = Runner.getCompatibleImage("/planet.png");
+        Runner.setFirstTimeFalse();
         
         //Sets the major axis to the larger of the two given radii
         radiusMajor = Math.max(radiusOne, radiusTwo);
@@ -158,17 +160,13 @@ class Satellite {
         trans.translate(visualRadius * Math.cos(orbitAngle) + planet.getCenterX() - satelliteImage.getWidth() / 2.0, visualRadius * -Math.sin(orbitAngle) + planet.getCenterY() - satelliteImage.getHeight() / 2.0);
         g2d.drawImage(satelliteImage, trans, null);
         
-        satellite.setFrame(radiusMajorVisual - SATELLITE_HEIGHT_WIDTH / 2, -SATELLITE_HEIGHT_WIDTH / 2, SATELLITE_HEIGHT_WIDTH, SATELLITE_HEIGHT_WIDTH);
-        
-        double v = Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() * (2 / radius - 1 / radiusMajor));
-        double vTransverse = getAngularVelocity() * radius;
-        System.out.println("V = " + v);
-        System.out.println("Vtransverse: " + vTransverse);
-        System.out.println("Vradial: " + Math.sqrt(Math.pow(v, 2) - Math.pow(vTransverse, 2)));
-        System.out.println("Smallest r: " + getVisualRadius(0) * radiusMajor / radiusMajorVisual);
-        System.out.println("Largest r: " + getVisualRadius(Math.PI) * radiusMajor / radiusMajorVisual);
-        System.out.println("Angular v: " + getAngularVelocity());
-        System.out.println("Radius: " + radius);
+//        System.out.println("V = " + Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() * (2 / radius - 1 / radiusMajor)));
+//        System.out.println("Vtransverse: " + getAngularVelocity() * radius);
+//        System.out.println("Vradial: " + Math.sqrt(Math.pow(v, 2) - Math.pow(vTransverse, 2)));
+//        System.out.println("Smallest r: " + getVisualRadius(0) * radiusMajor / radiusMajorVisual);
+//        System.out.println("Largest r: " + getVisualRadius(Math.PI) * radiusMajor / radiusMajorVisual);
+//        System.out.println("Angular v: " + getAngularVelocity());
+//        System.out.println("Radius: " + radius);
         
         /*
          * Originally multiplied by 0.002 since that is roughly the rate of the timer tick. The current time is then stored
@@ -197,7 +195,7 @@ class Satellite {
      */
     void drawOrbit(Graphics2D g2d) {
         g2d.setColor(Color.WHITE);
-        g2d.setStroke(orbitThickness);
+        g2d.setStroke(ORBIT_THICKNESS);
         g2d.draw(orbit);
     }
     
@@ -221,7 +219,23 @@ class Satellite {
      * Finds out if the satellite and planet ellipses would intersect and the point at wwhich they are closest.
      * @return Whether or not the satellite and planet would intersect
      */
-    boolean intersectsPlanet() {
+    boolean intersectsPlanet(double radiusOne, double radiusTwo) {
+        //Sets the major axis to the larger of the two given radii
+        double radiusMajor = Math.max(radiusOne, radiusTwo);
+        double radiusMinor = radiusOne + radiusTwo - radiusMajor;
+        double radiusMajorVisual, radiusMinorVisual;
+        
+        //Sets visual major and minor axes based on which way the full elliptical orbit fits
+        if(radiusMinor / radiusMajor * (Runner.frameWidth() / 2 - SATELLITE_HEIGHT_WIDTH - 35) <= Runner.frameHeight() / 2 - SATELLITE_HEIGHT_WIDTH - 35) {
+            radiusMajorVisual = Runner.frameWidth() / 2 - SATELLITE_HEIGHT_WIDTH - 35;
+            radiusMinorVisual = radiusMinor / radiusMajor * radiusMajorVisual;
+        }
+        else {
+            radiusMinorVisual = Runner.frameHeight() / 2 - SATELLITE_HEIGHT_WIDTH - 35;
+            radiusMajorVisual = radiusMajor / radiusMinor * radiusMinorVisual;
+        }
+        satellite.setFrame(radiusMajorVisual - SATELLITE_HEIGHT_WIDTH / 2, -SATELLITE_HEIGHT_WIDTH / 2, SATELLITE_HEIGHT_WIDTH, SATELLITE_HEIGHT_WIDTH);
+        planet.setPlanetEllipse(radiusMajorVisual, radiusMinorVisual);
         Area satelliteArea = new Area(satellite);
         satelliteArea.intersect(new Area(planet.getPlanet()));
         return !satelliteArea.isEmpty();
