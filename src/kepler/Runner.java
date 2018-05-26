@@ -438,6 +438,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         //Initializes pop-ups
         credits = new PopUp(330, 30, mainFrame.getHeight() - 60, mainFrame.getHeight() - 60, 30, Color.BLACK, Color.ORANGE, 2);
         settings = new PopUp(15, 15, mainFrame.getWidth() - 30, mainFrame.getHeight() - 30, 30, Color.BLACK, Color.ORANGE, 2) {
+            
             @Override
             public void mouseClicked(MouseEvent event) {}
         };
@@ -602,7 +603,14 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         //Makes saveButton initially not visible
         saveButton.setVisible(false);
         
+        //Adds the key listener to the necessary components
         mainFrame.addKeyListener(r);
+        settings.addKeyListener(r);
+        for(NumberField nf : settingsInputBases)
+            nf.addKeyListener(r);
+        for(NumberField nf : settingsInputPowers)
+            nf.addKeyListener(r);
+        saveButton.addKeyListener(r);
         
         //Adds components to JFrame
         for(NumberField nf : settingsInputBases)
@@ -628,9 +636,8 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         mainFrame.setAlwaysOnTop(true);
         mainFrame.setResizable(false);
         
-        //Shows the JFrame and requests that window focus is given to it
+        //Shows the JFrame
         mainFrame.setVisible(true);
-        mainFrame.requestFocus();
         
         //Starts the repaintTimer
         repaintTimer.start();
@@ -780,12 +787,8 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         
         //Sets clickable JPanels to visible and draws the credit text if credits pop-up is fully expanded
         boolean creditsExpanded = credits.percentageExpanded() == 1.0;
-        if(creditsExpanded) {
-            credits.requestFocusInWindow();
+        if(creditsExpanded)
             g.drawImage(creditsText, (int) Math.round(credits.getExpandedX()), (int) Math.round(credits.getExpandedY()), null);
-        }
-        else
-            mainFrame.requestFocusInWindow();
         for(JPanel b : clickableNames)
             b.setVisible(creditsExpanded);
     }
@@ -796,7 +799,6 @@ class Runner extends JPanel implements ActionListener, KeyListener {
      */
     private static void drawSettingOptions(Graphics g) {
         if(settings.percentageExpanded() == 1.0) {
-            settings.requestFocusInWindow();
             
             //Sets font to main font with greater size
             g.setFont(drawingFontSettings);
@@ -818,8 +820,9 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             saveButton.draw(g);
         }
         else {
-            saveButton.setVisible(false);
             mainFrame.requestFocusInWindow();
+            saveButton.setVisible(false);
+            if(credits.percentageExpanded() != 1.0)
             for(NumberField nf : settingsInputBases)
                 nf.setVisible(false);
             for(NumberField nf : settingsInputPowers)
