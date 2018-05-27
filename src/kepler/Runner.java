@@ -1,5 +1,6 @@
 package kepler;
 
+import nikunj.classes.Button;
 import nikunj.classes.GradientButton;
 import nikunj.classes.NumberField;
 import nikunj.classes.PopUp;
@@ -35,9 +36,13 @@ import java.awt.event.MouseListener;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.function.Supplier;
 
 /**
  * Class that is used for initialization and running the program
@@ -56,7 +61,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     /**
      * The x-position to which the strings in settings are right aligned
      */
-    private static final int SETTINGS_RIGHT_X = 465;
+    private static final int SETTINGS_RIGHT_X = 495;
     
     /**
      * Counter that forces the JFrame on top of other content while it is greater than zero
@@ -79,14 +84,29 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     private static boolean firstTime = true;
     
     /**
-     * The String that represents the error messate
+     * Whether the checks in settings are ticked
+     */
+    private static boolean[] checkTicked = new boolean[7];
+    
+    /**
+     * The String that represents the error message
      */
     private static String errorMessage;
     
     /**
      * Strings displayed in settings
      */
-    private static final String[] SETTINGS_STRINGS = {"Radius One:", "Radius Two:", "Mass:", "Show Velocity Value:", "Show Transverse Velocity Value:", "Show Radial Velocity Value:", "Periapsis:", "Apoapsis:", "Angular Velocity:", "Instantaneous Radius:"};
+    private static final String[] SETTINGS_STRINGS = {"Radius One:", "Radius Two:", "Mass:", "Show Velocity Value:", "Show Transverse Velocity Value:", "Show Radial Velocity Value:", "Show Periapsis Value:", "Show Apoapsis Value:", "Show Angular Velocity Value:", "Show Instantaneous Radius Value:"};
+    
+    /**
+     * Preformatted strings to put values into
+     */
+    private static final String[] SHOWN_VALUES = {"Velocity: %s m/s", "Transverse Velocity: %s m/s", "Radial Velocity: %s m/s", "Periapsis: %s m", "Apoapsis: %s m", "Angular Velocity: %s rad/s", "Instantaneous Radius: %s m"};
+    
+    /**
+     * Contains references to the functions needed to get the values for SHOWN_VALES
+     */
+    private static ArrayList<Supplier<Double>> getValues;
     
     /**
      * JFrame container that contains all the components that are displayed on screen
@@ -107,6 +127,11 @@ class Runner extends JPanel implements ActionListener, KeyListener {
      * drawingFont but at a larger size for settings
      */
     private static Font drawingFontSettings;
+    
+    /**
+     * Font for drawing calculated values
+     */
+    private static Font drawingFontValues;
     
     /**
      * The image representing the background
@@ -134,6 +159,11 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     private static Sound click;
     
     /**
+     * Sound effect when error happens in settings
+     */
+    private static Sound errorSound;
+    
+    /**
      * Represents the close window button in an application
      */
     private static GradientButton closeButton;
@@ -157,6 +187,11 @@ class Runner extends JPanel implements ActionListener, KeyListener {
      * The GradientButton used for saving the settings
      */
     private static GradientButton saveButton;
+    
+    /**
+     * Each represent one of the check boxes for showing values
+     */
+    private static Button[] checkBoxes = new Button[7];
     
     /**
      * The pop-up that is used for displaying the credits
@@ -200,17 +235,20 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     public static void main(String... args) throws IOException, UnsupportedAudioFileException {
         //Gets optimized images
         spaceBackground = getCompatibleImage("/spaceBackground.png");
+        creditsText = getCompatibleImage("/credits.png");
         BufferedImage close = getCompatibleImage("/headerButtons/close.png");
         BufferedImage draggable = getCompatibleImage("/headerButtons/draggable.png");
         BufferedImage music = getCompatibleImage("/headerButtons/music.png");
         BufferedImage sfx = getCompatibleImage("/headerButtons/sfx.png");
         BufferedImage save = getCompatibleImage("/save.png");
-        creditsText = getCompatibleImage("/credits.png");
+        BufferedImage checkBox = getCompatibleImage("/checkBox.png");
+        BufferedImage tickMark = getCompatibleImage("/tickMark.png");
         
         //Gets fonts
         try {
             drawingFont = Font.createFont(Font.TRUETYPE_FONT, getResource("/freeSans.ttf").openStream()).deriveFont(20f);
             drawingFontSettings = drawingFont.deriveFont(30f);
+            drawingFontValues = drawingFont.deriveFont(12f);
         }
         catch(FontFormatException e) {
             e.printStackTrace();
@@ -219,6 +257,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         //Gets audio files
         main = new Sound(getResource("/main.wav"), true);
         click = new Sound(getResource("/click.wav"), false);
+        errorSound = new Sound(getResource("/error.wav"), false);
         
         //Initializes and sets up the Runner object that is mainly used as a JPanel
         Runner r = new Runner();
@@ -232,10 +271,95 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         planet = new Planet(500000000000000.0);
         satellite = new Satellite(20, 30);
         
-         // Timer responsible for repainting the main content every 2 milliseconds
-         Timer repaintTimer = new Timer(2, r);
+        // Timer responsible for repainting the main content every 2 milliseconds
+        Timer repaintTimer = new Timer(2, r);
         
-        //Createst the close button that closes the application when clicked
+        setUpWindowButtons(close, draggable, music, sfx);
+        
+        //Initializes pop-ups
+        credits = new PopUp(330, 30, mainFrame.getHeight() - 60, mainFrame.getHeight() - 60, 30, Color.BLACK, Color.ORANGE, 2);
+        settings = new PopUp(15, 15, mainFrame.getWidth() - 30, mainFrame.getHeight() - 30, 30, Color.BLACK, Color.ORANGE, 2) {
+            
+            @Override
+            public void mouseClicked(MouseEvent event) {}
+        };
+        
+        setUpSettingsItems(save, checkBox, tickMark);
+        
+        setUpCreditsItems();
+        
+        //Sets all of the components' visibilities to true
+        r.setVisible(true);
+        closeButton.setVisible(true);
+        draggableButton.setVisible(true);
+        musicButton.setVisible(true);
+        sfxButton.setVisible(true);
+        credits.setVisible(true);
+        settings.setVisible(true);
+        error.setVisible(true);
+        
+        //Makes saveButton initially not visible
+        saveButton.setVisible(false);
+        
+        //Adds the key listener to the necessary components
+        mainFrame.addKeyListener(r);
+        settings.addKeyListener(r);
+        for(NumberField nf : settingsInputBases)
+            nf.addKeyListener(r);
+        for(NumberField nf : settingsInputPowers)
+            nf.addKeyListener(r);
+        saveButton.addKeyListener(r);
+        for(Button b : checkBoxes)
+            b.addKeyListener(r);
+        
+        //Adds components to JFrame
+        for(NumberField nf : settingsInputBases)
+            mainFrame.add(nf);
+        for(NumberField nf : settingsInputPowers)
+            mainFrame.add(nf);
+        mainFrame.add(r);
+        for(Button b : checkBoxes)
+            mainFrame.add(b);
+        mainFrame.add(saveButton);
+        mainFrame.add(error);
+        mainFrame.add(credits);
+        mainFrame.add(settings);
+        mainFrame.add(closeButton);
+        mainFrame.add(draggableButton);
+        mainFrame.add(musicButton);
+        mainFrame.add(sfxButton);
+        
+        //Sets up the remainder of the JFrame
+        Dimension dim = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
+        mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        mainFrame.setLocation((dim.width - mainFrame.getWidth()) / 2, (dim.height - mainFrame.getHeight()) / 2);
+        mainFrame.getContentPane().setLayout(null);
+        mainFrame.setUndecorated(true);
+        mainFrame.setAlwaysOnTop(true);
+        mainFrame.setResizable(false);
+        
+        //Initializes getValues to ArrayList full of methods to get values for SHOW_VALUES
+        getValues = new ArrayList<>(Arrays.asList(satellite::getVelocity, satellite::getTransverseVelocity, satellite::getRadialVelocity, satellite::getPeriapsis, satellite::getApoapsis, satellite::getAngularVelocity, satellite::getRadius));
+        
+        //Plays the background soundtrack
+        main.play();
+        
+        //Starts the repaintTimer
+        repaintTimer.start();
+        
+        //Shows the JFrame
+        mainFrame.setVisible(true);
+    }
+    
+    /**
+     * Sets up the buttons used in replacement of the windows buttons
+     * @param close     The image used for the close button
+     * @param draggable The image used for the draggable button
+     * @param music     The image used for the music button
+     * @param sfx       The image used for the sfx button
+     */
+    private static void setUpWindowButtons(BufferedImage close, BufferedImage draggable, BufferedImage music, BufferedImage sfx) {
+        //Creates the close button that closes the application when clicked
         closeButton = new GradientButton(close, Color.BLACK, Color.RED, 35, 2, 2, 24, 24) {
             
             @Override
@@ -364,12 +488,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             @Override
             public void afterDraw(Graphics g) {
                 //Draws a slash through the music button if muted
-                if(musicMuted) {
-                    Graphics2D g2d = (Graphics2D) g;
-                    g2d.setColor(Color.WHITE);
-                    g2d.setStroke(new BasicStroke(2));
-                    g2d.draw(new Line2D.Float(getX() + 4, 22, getX() + getWidth() - 4, 4));
-                }
+                drawCross(g, musicMuted, getX(), getWidth());
             }
             
             @Override
@@ -388,10 +507,14 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             @Override
             public void mouseClicked(MouseEvent e) {
                 //Switches the sfx volume from on to off or vice versa
-                if(sfxMuted)
+                if(sfxMuted) {
                     click.changeVolume(1.0);
-                else
+                    errorSound.changeVolume(1.0);
+                }
+                else {
                     click.changeVolume(0.0);
+                    errorSound.changeVolume(0.0);
+                }
                 click.play();
                 sfxMuted = !sfxMuted;
             }
@@ -417,12 +540,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             @Override
             public void afterDraw(Graphics g) {
                 //Draws a slash through the sfx button if muted
-                if(sfxMuted) {
-                    Graphics2D g2d = (Graphics2D) g;
-                    g2d.setColor(Color.WHITE);
-                    g2d.setStroke(new BasicStroke(2));
-                    g2d.draw(new Line2D.Float(getX() + 4, 22, getX() + getWidth() - 4, 4));
-                }
+                drawCross(g, sfxMuted, getX(), getWidth());
             }
             
             @Override
@@ -434,17 +552,104 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 return super.onButton() && !settings.getBounds().contains(mousePos);
             }
         };
-        
-        //Initializes pop-ups
-        credits = new PopUp(330, 30, mainFrame.getHeight() - 60, mainFrame.getHeight() - 60, 30, Color.BLACK, Color.ORANGE, 2);
-        settings = new PopUp(15, 15, mainFrame.getWidth() - 30, mainFrame.getHeight() - 30, 30, Color.BLACK, Color.ORANGE, 2) {
+    }
+    
+    /**
+     * Initializes many things that are used in credits
+     */
+    private static void setUpCreditsItems() {
+        //Initializes and sets up clickable credits
+        for(int i = 0, y = CREDIT_TEXT_ORIGINAL_Y - 11; i < clickableNames.length; ++i, y += 40) {
+            //Initializes credit names
+            clickableNames[i] = new JPanel();
+            JPanel b = clickableNames[i];
+            b.setVisible(false);
+            b.setLocation((int) (CREDIT_TEXT_X - 1 - credits.getExpandedX()), (int) (y - credits.getExpandedY()));
+            b.setOpaque(false);
+            b.setName(Integer.toString(i));
             
-            @Override
-            public void mouseClicked(MouseEvent event) {}
-        };
+            //Adds mouse listener such that the user's default browser opens a URL depending on which button is clicked
+            b.addMouseListener(new MouseListener() {
+                
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    //Opens URL in default browser based on which clickable JPanel is clicked
+                    String url = "";
+                    String name = ((JPanel) e.getSource()).getName();
+                    int nameInt = Integer.parseInt(name);
+                    switch(nameInt) {
+                        case 0:
+                            url = "https://natentine.com/royalty-free-music/zypheers-canyon";
+                            break;
+                        case 1:
+                            url = "http://www.freesfx.co.uk/sfx/button";
+                            break;
+                        case 2:
+                            url = "https://freesound.org/people/Autistic%20Lucario/sounds/142608/";
+                            break;
+                        case 3:
+                            url = "mailto:aaron4game@gmail.com";
+                            break;
+                        case 4:
+                            url = "mailto:nikchawla312@gmail.com";
+                            break;
+                    }
+                    try {
+                        if(!url.equals("") && Desktop.isDesktopSupported())
+                            Desktop.getDesktop().browse(new URI(url));
+                    }
+                    catch(IOException | URISyntaxException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                
+                @Override
+                public void mousePressed(MouseEvent e) {}
+                
+                @Override
+                public void mouseReleased(MouseEvent e) {}
+                
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    //If the clickable JPanel is visible and the mouse is hovering over it, the cursor is switched to the hand cursor
+                    if(b.isVisible()) {
+                        mainFrame.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        credits.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    }
+                }
+                
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    //If the mouse exits the clickable JPanel, the cursor is switched back to the default cursor
+                    mainFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    credits.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    b.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                }
+                
+            });
+        }
+        
+        //Sets size of clickable names
+        clickableNames[0].setSize(86, 9);
+        clickableNames[1].setSize(52, 9);
+        clickableNames[2].setSize(89, 9);
+        clickableNames[3].setSize(102, 9);
+        clickableNames[4].setSize(85, 9);
+        
+        //Adds clickable names to credits pop-up and sets the credits pop-up's layout to null for absolute positioning
+        for(JPanel b : clickableNames)
+            credits.add(b);
+        credits.setLayout(null);
+    }
+    
+    private static void setUpSettingsItems(BufferedImage save, BufferedImage checkBox, BufferedImage tickMark)
+            throws IOException {
+        //Sets up error pop-up
         error = new PopUp(450, 200, 300, 300, 30, Color.BLACK, Color.ORANGE, 2) {
             @Override
             public void onClick() {
+                //Once the error pop-up is clicked, reenables NumberFields
                 for(NumberField nf : settingsInputBases) {
                     nf.setEditable(true);
                     nf.setHighlighter(defaultHighlighter);
@@ -487,48 +692,14 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             
         };
         
-        //Initializes and sets up clickable credits
-        for(int i = 0, y = CREDIT_TEXT_ORIGINAL_Y - 11; i < clickableNames.length; ++i, y += 40) {
-            //Initializes credit names
-            clickableNames[i] = new JPanel();
-            JPanel b = clickableNames[i];
-            b.setVisible(false);
-            b.setLocation((int) (CREDIT_TEXT_X - 1 - credits.getExpandedX()), (int) (y - credits.getExpandedY()));
-            b.setOpaque(false);
-            b.setName(Integer.toString(i));
-            
-            //Adds mouse listener such that the user's default browser opens a URL depending on which button is clicked
-            b.addMouseListener(new MouseListener() {
-                
+        //Initializes checkbox buttons
+        for(int i = 0, y = 195; i < checkBoxes.length; ++i, y += 58) {
+            final int buttonIndex = i;
+            checkBoxes[i] = new Button(checkBox, SETTINGS_RIGHT_X + 8, y, 40, 40) {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    String url = "";
-                    String name = ((JPanel) e.getSource()).getName();
-                    int nameInt = Integer.parseInt(name);
-                    switch(nameInt) {
-                        case 0:
-                            url = "https://natentine.com/royalty-free-music/zypheers-canyon";
-                            break;
-                        case 1:
-                            url = "http://www.freesfx.co.uk/sfx/button";
-                            break;
-                        case 2:
-                            url = "https://freesound.org/people/Autistic%20Lucario/sounds/142608/";
-                            break;
-                        case 3:
-                            url = "mailto:aaron4game@gmail.com";
-                            break;
-                        case 4:
-                            url = "mailto:nikchawla312@gmail.com";
-                            break;
-                    }
-                    try {
-                        if(!url.equals(""))
-                            Desktop.getDesktop().browse(new URI(url));
-                    }
-                    catch(IOException | URISyntaxException e1) {
-                        e1.printStackTrace();
-                    }
+                    //If the checkbox button is clicked, it switches from being ticked to not being ticked or vice versa
+                    checkTicked[buttonIndex] = !checkTicked[buttonIndex];
                 }
                 
                 @Override
@@ -538,35 +709,26 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 public void mouseReleased(MouseEvent e) {}
                 
                 @Override
-                public void mouseEntered(MouseEvent e) {
-                    if(b.isVisible()) {
-                        mainFrame.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                        credits.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                    }
-                }
+                public void mouseEntered(MouseEvent e) {}
                 
                 @Override
-                public void mouseExited(MouseEvent e) {
-                    mainFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    credits.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    b.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                }
+                public void mouseExited(MouseEvent e) {}
                 
-            });
+                @Override
+                public void mouseDragged(MouseEvent e) {}
+                
+                @Override
+                public void mouseMoved(MouseEvent e) {}
+                
+                @Override
+                public void afterDraw(Graphics g) {
+                    //If the checkbox is ticked, a tick mark is draawn
+                    if(checkTicked[buttonIndex])
+                        g.drawImage(tickMark, getX(), getY(), null);
+                }
+            };
+            checkBoxes[i].setVisible(false);
         }
-        
-        //Sets size of clickable names
-        clickableNames[0].setSize(86, 9);
-        clickableNames[1].setSize(52, 9);
-        clickableNames[2].setSize(89, 9);
-        clickableNames[3].setSize(102, 9);
-        clickableNames[4].setSize(85, 9);
-        
-        //Adds clickable names to credits pop-up and sets the credits pop-up's layout to null for absolute positioning
-        for(JPanel b : clickableNames)
-            credits.add(b);
-        credits.setLayout(null);
         
         //Sets up base and powerNumberFields
         for(int i = 0, y = 20; i < settingsInputBases.length; ++i, y += 59) {
@@ -589,63 +751,15 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         settingsInputPowers[1].setText("1");
         settingsInputBases[2].setText("5.0");
         settingsInputPowers[2].setText("14");
-        
-        //Sets all of the components' visibilities to true
-        r.setVisible(true);
-        closeButton.setVisible(true);
-        draggableButton.setVisible(true);
-        musicButton.setVisible(true);
-        sfxButton.setVisible(true);
-        credits.setVisible(true);
-        settings.setVisible(true);
-        error.setVisible(true);
-        
-        //Makes saveButton initially not visible
-        saveButton.setVisible(false);
-        
-        //Adds the key listener to the necessary components
-        mainFrame.addKeyListener(r);
-        settings.addKeyListener(r);
-        for(NumberField nf : settingsInputBases)
-            nf.addKeyListener(r);
-        for(NumberField nf : settingsInputPowers)
-            nf.addKeyListener(r);
-        saveButton.addKeyListener(r);
-        
-        //Adds components to JFrame
-        for(NumberField nf : settingsInputBases)
-            mainFrame.add(nf);
-        for(NumberField nf : settingsInputPowers)
-            mainFrame.add(nf);
-        mainFrame.add(r);
-        mainFrame.add(saveButton);
-        mainFrame.add(error);
-        mainFrame.add(credits);
-        mainFrame.add(settings);
-        mainFrame.add(closeButton);
-        mainFrame.add(draggableButton);
-        mainFrame.add(musicButton);
-        mainFrame.add(sfxButton);
-        
-        //Sets up the remainder of the JFrame
-        Dimension dim = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        mainFrame.setLocation((dim.width - mainFrame.getWidth()) / 2, (dim.height - mainFrame.getHeight()) / 2);
-        mainFrame.getContentPane().setLayout(null);
-        mainFrame.setUndecorated(true);
-        mainFrame.setAlwaysOnTop(true);
-        mainFrame.setResizable(false);
-        
-        //Shows the JFrame
-        mainFrame.setVisible(true);
-        
-        //Starts the repaintTimer
-        repaintTimer.start();
-        
-        //Plays the background soundtrack
-        main.play();
-        
-        settings.setExpanding(true);
+    }
+    
+    private static void drawCross(Graphics g, boolean audioMuted, int x, int width) {
+        if(audioMuted) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setColor(Color.WHITE);
+            g2d.setStroke(new BasicStroke(2));
+            g2d.draw(new Line2D.Float(x + 4, 22, x + width - 4, 4));
+        }
     }
     
     /**
@@ -678,11 +792,15 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             //Initializes planet and satellite with the above values
             planet = new Planet(planetMass);
             satellite = new Satellite(radiusOne, radiusTwo);
-        
+            
+            //Replaces methods with methods from new instance of satellite
+            getValues = new ArrayList<>(Arrays.asList(satellite::getVelocity, satellite::getTransverseVelocity, satellite::getRadialVelocity, satellite::getPeriapsis, satellite::getApoapsis, satellite::getAngularVelocity, satellite::getRadius));
+            
             //Closes the settings pop-up
             settings.setExpanding(false);
         }
         else {
+            //Finds which radius is larger so the error message can explain which radius needs to be increased or decreased
             boolean radiusOneBigger = radiusOne > radiusTwo;
             String bigger, smaller;
             if(radiusOneBigger) {
@@ -697,10 +815,17 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         }
     }
     
+    /**
+     * Starts the error message pop-up
+     * @param errorMessage The message that will be displayed in the error pop-up
+     */
     private static void errorStart(String errorMessage) {
         Runner.errorMessage = errorMessage;
         error.setExpanding(true);
+        errorSound.play();
         defaultHighlighter = settingsInputBases[0].getHighlighter();
+        
+        //Upon the error pop-up showing up, the NumberFields cannot be edited
         for(NumberField nf : settingsInputBases) {
             nf.setEditable(false);
             nf.setHighlighter(null);
@@ -769,16 +894,36 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         //Sets graphics font to the main font
         g2d.setFont(drawingFont);
         
-        //Draws the planet, satellite, buttons, background, etc.
+        //Draws the planet, satellite, buttons, background, pop-ups, etc.
         g2d.drawImage(spaceBackground, 0, 0, null);
-        if(settings.percentageExpanded() != 1.0) {
-            planet.draw(g2d);
-            satellite.draw(g2d);
-        }
+        planet.draw(g2d);
+        satellite.draw(g2d);
         closeButton.draw(g2d);
         draggableButton.draw(g2d);
         musicButton.draw(g2d);
         sfxButton.draw(g2d);
+        
+        //Gets ArrayList of indices of checked values
+        ArrayList<Integer> trueIndices = new ArrayList<>();
+        for(int i = 0; i < checkTicked.length; ++i) {
+            if(checkTicked[i])
+                trueIndices.add(i);
+        }
+        
+        //Draws the checked settings values at the bottom
+        g.setFont(drawingFontValues);
+        g.setColor(Color.WHITE);
+        int x = 1;
+        for(int i = 0; i < trueIndices.size(); ++i) {
+            int index = trueIndices.get(i);
+            String valueString = String.format(SHOWN_VALUES[index], getScientific(0, getValues.get(index).get()));
+            if(i != trueIndices.size() - 1)
+                valueString += ", ";
+            g.drawString(valueString, x, 595);
+            x += g.getFontMetrics().stringWidth(valueString);
+        }
+        
+        //Calls the pop-up draw methods as well as some methods that are used to draw content for the pop-ups
         credits.draw(g2d);
         settings.draw(g2d);
         drawSettingOptions(g2d);
@@ -787,8 +932,20 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         
         //Sets clickable JPanels to visible and draws the credit text if credits pop-up is fully expanded
         boolean creditsExpanded = credits.percentageExpanded() == 1.0;
-        if(creditsExpanded)
+        if(creditsExpanded) {
             g.drawImage(creditsText, (int) Math.round(credits.getExpandedX()), (int) Math.round(credits.getExpandedY()), null);
+            
+            //Sets to smaller font
+            g.setFont(drawingFontValues);
+            
+            //Draws "Click to close" at bottom of credits pop-up
+            String close = "Click to close";
+            g.drawString(close, (mainFrame.getWidth() - g.getFontMetrics().stringWidth(close)) / 2, 560);
+            
+            //Sets font back to normal
+            g.setFont(drawingFont);
+        }
+        //Sets the clickable JPanels' visibility based on whether or not the credits are expanded
         for(JPanel b : clickableNames)
             b.setVisible(creditsExpanded);
     }
@@ -808,21 +965,28 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             for(int i = 0, y = 50; i < SETTINGS_STRINGS.length; ++i, y += 58)
                 drawRightAlignedString(g, SETTINGS_STRINGS[i], y);
             
+            //Sets NumberFields visible
             for(NumberField nf : settingsInputBases) {
                 nf.setVisible(true);
                 g.drawString("x 10 ^", nf.getX() + nf.getWidth() + 9, nf.getY() + 30);
             }
             for(NumberField nf : settingsInputPowers)
                 nf.setVisible(true);
+            for(Button b : checkBoxes)
+                b.setVisible(true);
             
-            //Makes save button visible and draw it
+            //Makes save button visible and draws it
             saveButton.setVisible(true);
             saveButton.draw(g);
+            
+            //Draws checkBoxes
+            for(Button b : checkBoxes)
+                b.draw(g);
         }
         else {
+            //Hides contents of settings pop-up and requests focus back to JFrame
             mainFrame.requestFocusInWindow();
             saveButton.setVisible(false);
-            if(credits.percentageExpanded() != 1.0)
             for(NumberField nf : settingsInputBases)
                 nf.setVisible(false);
             for(NumberField nf : settingsInputPowers)
@@ -851,7 +1015,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         if(error.percentageExpanded() == 1.0) {
             g.setColor(Color.WHITE);
             String error = "Error:";
-            g.drawString(error, (mainFrame.getWidth() - g.getFontMetrics().stringWidth(error))/2, 195 + 35);
+            g.drawString(error, (mainFrame.getWidth() - g.getFontMetrics().stringWidth(error)) / 2, 195 + 35);
             String[] errorSplit = errorMessage.split("\\s+");
             StringBuilder line = new StringBuilder();
             int lineIndex = 1;
@@ -871,6 +1035,26 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             }
             if(!drewOnLast)
                 g.drawString(line.toString(), 460, 195 + 35 + 30 * lineIndex);
+        }
+    }
+    
+    /**
+     * Returns String in scientific notation from Double with the coefficient rounded to the hundredths
+     * @param tenMultiple Current power of ten
+     * @param normal      Current Double value
+     * @return String in scientific notation with the coefficient rounded to the hundredths
+     */
+    private static String getScientific(int tenMultiple, double normal) {
+        if(normal == 0)
+            return "0";
+        if(normal >= 10)
+            return getScientific(tenMultiple + 1, normal / 10);
+        else if(normal < 1)
+            return getScientific(tenMultiple - 1, normal * 10);
+        else {
+            BigDecimal bigNormal = new BigDecimal(normal);
+            bigNormal = bigNormal.setScale(2, BigDecimal.ROUND_HALF_UP);
+            return String.format("%.2f e %d", bigNormal.doubleValue(), tenMultiple);
         }
     }
     
@@ -897,6 +1081,10 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         return mainFrame.getHeight();
     }
     
+    /**
+     * Returns whether or not it is the first time that the paintComponent method has been used
+     * @return Whether or not paintComponent method has been called for first time
+     */
     static boolean isFirstTime() {
         return firstTime;
     }
@@ -936,7 +1124,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     
     /**
      * Based on the keys pressed, an action is triggered
-     * @param e The mouse keyevent
+     * @param e The mouse KeyEvent
      */
     @Override
     public void keyPressed(KeyEvent e) {

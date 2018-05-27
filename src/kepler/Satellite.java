@@ -45,6 +45,31 @@ class Satellite {
     private double radius;
     
     /**
+     * The net velocity of the satellite
+     */
+    private double velocity;
+    
+    /**
+     * The component of the velocity perpendicular to the radius
+     */
+    private double transverseVelocity;
+    
+    /**
+     * The component of velocity parallel to the radius
+     */
+    private double radialVelocity;
+    
+    /**
+     * The smallest distance between the orbited mass' center of mass and the orbiting mass' center of mass during a period
+     */
+    private double periapsis;
+    
+    /**
+     * The largest distance between the orbited mass' center of mass and the orbiting mass' center of mass during a period
+     */
+    private double apoapsis;
+    
+    /**
      * The actual given radii of the semi-major and semi-minor axes of the ellipse in meters
      */
     private double radiusMajor, radiusMinor;
@@ -123,7 +148,7 @@ class Satellite {
      * Calculates and returns the instantaneous angular velocity of the satellite in radians/second using ω = b/r^2 * sqrt(GM/a)
      * @return Instantaneous angular velocity
      */
-    private double getAngularVelocity() {
+    double getAngularVelocity() {
         return radiusMinor / Math.pow(radius, 2) * Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() / radiusMajor);
     }
     
@@ -160,13 +185,12 @@ class Satellite {
         trans.translate(visualRadius * Math.cos(orbitAngle) + planet.getCenterX() - satelliteImage.getWidth() / 2.0, visualRadius * -Math.sin(orbitAngle) + planet.getCenterY() - satelliteImage.getHeight() / 2.0);
         g2d.drawImage(satelliteImage, trans, null);
         
-//        System.out.println("V = " + Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() * (2 / radius - 1 / radiusMajor)));
-//        System.out.println("Vtransverse: " + getAngularVelocity() * radius);
-//        System.out.println("Vradial: " + Math.sqrt(Math.pow(v, 2) - Math.pow(vTransverse, 2)));
-//        System.out.println("Smallest r: " + getVisualRadius(0) * radiusMajor / radiusMajorVisual);
-//        System.out.println("Largest r: " + getVisualRadius(Math.PI) * radiusMajor / radiusMajorVisual);
-//        System.out.println("Angular v: " + getAngularVelocity());
-//        System.out.println("Radius: " + radius);
+        //Calculates values that can be displayed using settings options
+        velocity = Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() * (2 / radius - 1 / radiusMajor));
+        transverseVelocity = getAngularVelocity() * radius;
+        radialVelocity = Math.sqrt(Math.pow(velocity, 2) - Math.pow(transverseVelocity, 2));
+        periapsis = getVisualRadius(0) * radiusMajor / radiusMajorVisual;
+        apoapsis = getVisualRadius(Math.PI) * radiusMajor / radiusMajorVisual;
         
         /*
          * Originally multiplied by 0.002 since that is roughly the rate of the timer tick. The current time is then stored
@@ -216,7 +240,7 @@ class Satellite {
     }
     
     /**
-     * Finds out if the satellite and planet ellipses would intersect and the point at wwhich they are closest.
+     * Finds out if the satellite and planet ellipses would intersect and the point at which they are closest.
      * @return Whether or not the satellite and planet would intersect
      */
     boolean intersectsPlanet(double radiusOne, double radiusTwo) {
@@ -234,11 +258,63 @@ class Satellite {
             radiusMinorVisual = Runner.frameHeight() / 2 - SATELLITE_HEIGHT_WIDTH - 35;
             radiusMajorVisual = radiusMajor / radiusMinor * radiusMinorVisual;
         }
+        
+        //Sets the satellite's and planet's positions based on the hypothetical radii
         satellite.setFrame(radiusMajorVisual - SATELLITE_HEIGHT_WIDTH / 2, -SATELLITE_HEIGHT_WIDTH / 2, SATELLITE_HEIGHT_WIDTH, SATELLITE_HEIGHT_WIDTH);
         planet.setPlanetEllipse(radiusMajorVisual, radiusMinorVisual);
+        
+        //Checks whether or not the planet and satellite would collide
         Area satelliteArea = new Area(satellite);
         satelliteArea.intersect(new Area(planet.getPlanet()));
         return !satelliteArea.isEmpty();
+    }
+    
+    /**
+     * Returns velocity of satellite
+     * @return Satellite velocity
+     */
+    Double getVelocity() {
+        return velocity;
+    }
+    
+    /**
+     * Returns the component of the velocity of the satellite that is perpendicular to the radius
+     * @return Satellite velocity component perpendicular to radius
+     */
+    Double getTransverseVelocity() {
+        return transverseVelocity;
+    }
+    
+    /**
+     * Returns the component of the velocity of the satellite that is parallel to the radius
+     * @return Satellite velocity component parallel to radius
+     */
+    Double getRadialVelocity() {
+        return radialVelocity;
+    }
+    
+    /**
+     * Gets the smallest distance between the orbited mass and orbiting mass during a period
+     * @return Periapsis of orbit
+     */
+    Double getPeriapsis() {
+        return periapsis;
+    }
+    
+    /**
+     * Gets the largest distance between the centers of masses of the orbited mass and orbiting mass during a period
+     * @return Apoapsis of orbit
+     */
+    Double getApoapsis() {
+        return apoapsis;
+    }
+    
+    /**
+     * Returns instantaneous distance between the centers of masses of the orbited mass and orbiting mass
+     * @return Instantaneous radius
+     */
+    Double getRadius() {
+        return radius;
     }
     
 }
