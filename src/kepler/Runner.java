@@ -96,7 +96,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     /**
      * Strings displayed in settings
      */
-    private static final String[] SETTINGS_STRINGS = {"Radius One:", "Radius Two:", "Mass:", "Show Velocity Value:", "Show Transverse Velocity Value:", "Show Radial Velocity Value:", "Show Periapsis Value:", "Show Apoapsis Value:", "Show Angular Velocity Value:", "Show Instantaneous Radius Value:"};
+    private static final String[] SETTINGS_STRINGS = {"Orbit Radius One:", "Orbit Radius Two:", "Planet Mass:", "Show Velocity Value:", "Show Transverse Velocity Value:", "Show Radial Velocity Value:", "Show Periapsis Value:", "Show Apoapsis Value:", "Show Angular Velocity Value:", "Show Instantaneous Radius Value:"};
     
     /**
      * Preformatted strings to put values into
@@ -646,7 +646,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     private static void setUpSettingsItems(BufferedImage save, BufferedImage checkBox, BufferedImage tickMark)
             throws IOException {
         //Sets up error pop-up
-        error = new PopUp(450, 200, 300, 300, 30, Color.BLACK, Color.ORANGE, 2) {
+        error = new PopUp(450, 200, 300, 300, 15, Color.BLACK, Color.ORANGE, 2) {
             @Override
             public void onClick() {
                 //Once the error pop-up is clicked, reenables NumberFields
@@ -689,6 +689,11 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             
             @Override
             public void mouseMoved(MouseEvent e) {}
+    
+            @Override
+            public boolean onButton() {
+                return super.onButton() && error.percentageExpanded() != 1.0;
+            }
             
         };
         
@@ -722,7 +727,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 
                 @Override
                 public void afterDraw(Graphics g) {
-                    //If the checkbox is ticked, a tick mark is draawn
+                    //If the checkbox is ticked, a tick mark is drawn
                     if(checkTicked[buttonIndex])
                         g.drawImage(tickMark, getX(), getY(), null);
                 }
@@ -732,10 +737,10 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         
         //Sets up base and powerNumberFields
         for(int i = 0, y = 20; i < settingsInputBases.length; ++i, y += 59) {
-            NumberField baseField = new NumberField(7, NumberField.STATE_DECIMAL);
-            NumberField powerField = new NumberField(2, NumberField.STATE_NORMAL);
+            NumberField baseField = new NumberField(7, NumberField.STATE_DECIMAL, false);
+            NumberField powerField = new NumberField(2, 3, NumberField.STATE_NORMAL);
             baseField.setBounds(SETTINGS_RIGHT_X + 5, y, 140, 40);
-            powerField.setBounds(baseField.getX() + baseField.getWidth() + 100, y, 50, 40);
+            powerField.setBounds(baseField.getX() + baseField.getWidth() + 100, y, 70, 40);
             baseField.setVisible(false);
             powerField.setVisible(false);
             baseField.setFont(drawingFontSettings);
@@ -809,7 +814,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             }
             else {
                 bigger = "Radius Two";
-                smaller = "Radius Onw";
+                smaller = "Radius One";
             }
             errorStart(String.format("The difference between the inputted radii is too large. You can either increase %s or decrease %s.", smaller, bigger));
         }
@@ -991,6 +996,8 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 nf.setVisible(false);
             for(NumberField nf : settingsInputPowers)
                 nf.setVisible(false);
+            for(Button b : checkBoxes)
+                b.setVisible(false);
         }
         
         //Sets font back to default drawing font
@@ -1035,6 +1042,8 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             }
             if(!drewOnLast)
                 g.drawString(line.toString(), 460, 195 + 35 + 30 * lineIndex);
+            String close = "Click to close";
+            g.drawString(close, (mainFrame.getWidth() - g.getFontMetrics().stringWidth(close)) / 2, 490);
         }
     }
     
