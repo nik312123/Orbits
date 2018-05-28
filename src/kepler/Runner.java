@@ -86,7 +86,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     /**
      * Whether the checks in settings are ticked
      */
-    private static boolean[] checkTicked = new boolean[7];
+    private static boolean[] checkTicked = new boolean[8];
     
     /**
      * The String that represents the error message
@@ -96,12 +96,12 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     /**
      * Strings displayed in settings
      */
-    private static final String[] SETTINGS_STRINGS = {"Orbit Radius One:", "Orbit Radius Two:", "Planet Mass:", "Show Velocity Value:", "Show Transverse Velocity Value:", "Show Radial Velocity Value:", "Show Periapsis Value:", "Show Apoapsis Value:", "Show Angular Velocity Value:", "Show Instantaneous Radius Value:"};
+    private static final String[] SETTINGS_STRINGS = {"Orbit Radius One:", "Orbit Radius Two:", "Planet Mass:", "Show Velocity Value:", "Show Transverse Velocity Value:", "Show Radial Velocity Value:", "Show Periapsis Value:", "Show Apoapsis Value:", "Show Angular Velocity Value:", "Show Instantaneous Radius Value:", "Show Period:"};
     
     /**
      * Preformatted strings to put values into
      */
-    private static final String[] SHOWN_VALUES = {"Velocity: %s m/s", "Transverse Velocity: %s m/s", "Radial Velocity: %s m/s", "Periapsis: %s m", "Apoapsis: %s m", "Angular Velocity: %s rad/s", "Instantaneous Radius: %s m"};
+    private static final String[] SHOWN_VALUES = {"Velocity: %s m/s", "Transverse Velocity: %s m/s", "Radial Velocity: %s m/s", "Periapsis: %s m", "Apoapsis: %s m", "Angular Velocity: %s rad/s", "Instantaneous Radius: %s m", "Period: %s s"};
     
     /**
      * Contains references to the functions needed to get the values for SHOWN_VALES
@@ -191,7 +191,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     /**
      * Each represent one of the check boxes for showing values
      */
-    private static Button[] checkBoxes = new Button[7];
+    private static Button[] checkBoxes = new Button[8];
     
     /**
      * The pop-up that is used for displaying the credits
@@ -339,7 +339,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         mainFrame.setResizable(false);
         
         //Initializes getValues to ArrayList full of methods to get values for SHOW_VALUES
-        getValues = new ArrayList<>(Arrays.asList(satellite::getVelocity, satellite::getTransverseVelocity, satellite::getRadialVelocity, satellite::getPeriapsis, satellite::getApoapsis, satellite::getAngularVelocity, satellite::getRadius));
+        getValues = new ArrayList<>(Arrays.asList(satellite::getVelocity, satellite::getTransverseVelocity, satellite::getRadialVelocity, satellite::getPeriapsis, satellite::getApoapsis, satellite::getAngularVelocity, satellite::getRadius, satellite::getPeriod));
         
         //Plays the background soundtrack
         main.play();
@@ -698,7 +698,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         };
         
         //Initializes checkbox buttons
-        for(int i = 0, y = 195; i < checkBoxes.length; ++i, y += 58) {
+        for(int i = 0, y = 177; i < checkBoxes.length; ++i, y += 52) {
             final int buttonIndex = i;
             checkBoxes[i] = new Button(checkBox, SETTINGS_RIGHT_X + 8, y, 40, 40) {
                 @Override
@@ -736,7 +736,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         }
         
         //Sets up base and powerNumberFields
-        for(int i = 0, y = 20; i < settingsInputBases.length; ++i, y += 59) {
+        for(int i = 0, y = 20; i < settingsInputBases.length; ++i, y += 53) {
             NumberField baseField = new NumberField(7, NumberField.STATE_DECIMAL, false);
             NumberField powerField = new NumberField(2, 3, NumberField.STATE_NORMAL);
             baseField.setBounds(SETTINGS_RIGHT_X + 5, y, 140, 40);
@@ -799,7 +799,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             satellite = new Satellite(radiusOne, radiusTwo);
             
             //Replaces methods with methods from new instance of satellite
-            getValues = new ArrayList<>(Arrays.asList(satellite::getVelocity, satellite::getTransverseVelocity, satellite::getRadialVelocity, satellite::getPeriapsis, satellite::getApoapsis, satellite::getAngularVelocity, satellite::getRadius));
+            getValues = new ArrayList<>(Arrays.asList(satellite::getVelocity, satellite::getTransverseVelocity, satellite::getRadialVelocity, satellite::getPeriapsis, satellite::getApoapsis, satellite::getAngularVelocity, satellite::getRadius, satellite::getPeriod));
             
             //Closes the settings pop-up
             settings.setExpanding(false);
@@ -967,7 +967,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             g.setColor(Color.WHITE);
             
             //Draws each settings option
-            for(int i = 0, y = 50; i < SETTINGS_STRINGS.length; ++i, y += 58)
+            for(int i = 0, y = 50; i < SETTINGS_STRINGS.length; ++i, y += 52)
                 drawRightAlignedString(g, SETTINGS_STRINGS[i], y);
             
             //Sets NumberFields visible

@@ -70,6 +70,11 @@ class Satellite {
     private double apoapsis;
     
     /**
+     * Thw time it takes the satellite to orbit once around the planet
+     */
+    private double period;
+    
+    /**
      * The actual given radii of the semi-major and semi-minor axes of the ellipse in meters
      */
     private double radiusMajor, radiusMinor;
@@ -191,6 +196,7 @@ class Satellite {
         radialVelocity = Math.sqrt(Math.pow(velocity, 2) - Math.pow(transverseVelocity, 2));
         periapsis = getVisualRadius(0) * radiusMajor / radiusMajorVisual;
         apoapsis = getVisualRadius(Math.PI) * radiusMajor / radiusMajorVisual;
+        period = 2 * Math.PI * Math.sqrt(Math.pow(radiusMajor, 3)/(GRAVITATIONAL_CONSTANT * planet.getMass()));
         
         /*
          * Originally multiplied by 0.002 since that is roughly the rate of the timer tick. The current time is then stored
@@ -315,6 +321,14 @@ class Satellite {
      */
     Double getRadius() {
         return radius;
+    }
+    
+    /**
+     * Returns the period of the satellite
+     * @return Satellite period
+     */
+    Double getPeriod() {
+        return period;
     }
     
 }
