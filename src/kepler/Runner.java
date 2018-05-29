@@ -33,6 +33,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -164,6 +165,16 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     private static Sound errorSound;
     
     /**
+     * The button that expands the settings pop-up when clicked
+     */
+    private static GradientButton settingsButton;
+    
+    /**
+     * The button that expands the credits pop-up when clicked
+     */
+    private static GradientButton creditsButton;
+    
+    /**
      * Represents the close window button in an application
      */
     private static GradientButton closeButton;
@@ -243,6 +254,10 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         BufferedImage save = getCompatibleImage("/save.png");
         BufferedImage checkBox = getCompatibleImage("/checkBox.png");
         BufferedImage tickMark = getCompatibleImage("/tickMark.png");
+        BufferedImage cog = getCompatibleImage("/cog.png");
+        BufferedImage cogHover = getCompatibleImage("/cogHover.png");
+        BufferedImage about = getCompatibleImage("/about.png");
+        BufferedImage aboutHover = getCompatibleImage("/aboutHover.png");
         
         //Gets fonts
         try {
@@ -284,9 +299,9 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             public void mouseClicked(MouseEvent event) {}
         };
         
-        setUpSettingsItems(save, checkBox, tickMark);
+        setUpSettingsItems(save, checkBox, tickMark, cog, cogHover);
         
-        setUpCreditsItems();
+        setUpCreditsItems(about, aboutHover);
         
         //Sets all of the components' visibilities to true
         r.setVisible(true);
@@ -297,6 +312,8 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         credits.setVisible(true);
         settings.setVisible(true);
         error.setVisible(true);
+        settingsButton.setVisible(true);
+        creditsButton.setVisible(true);
         
         //Makes saveButton initially not visible
         saveButton.setVisible(false);
@@ -328,6 +345,8 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         mainFrame.add(draggableButton);
         mainFrame.add(musicButton);
         mainFrame.add(sfxButton);
+        mainFrame.add(settingsButton);
+        mainFrame.add(creditsButton);
         
         //Sets up the remainder of the JFrame
         Dimension dim = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
@@ -557,7 +576,36 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     /**
      * Initializes many things that are used in credits
      */
-    private static void setUpCreditsItems() {
+    private static void setUpCreditsItems(BufferedImage about, BufferedImage aboutHover) {
+        //Sets up credits button
+        creditsButton = new GradientButton(about, aboutHover, new Ellipse2D.Double(0, 0, 30, 31), 1168, 90, -15, -16, 30, 31) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+        
+            }
+    
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(onButton() && !settings.getExpanding())
+                    credits.setExpanding(true);
+            }
+    
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+    
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+    
+            @Override
+            public void mouseExited(MouseEvent e) {}
+    
+            @Override
+            public void mouseDragged(MouseEvent e) {}
+    
+            @Override
+            public void mouseMoved(MouseEvent e) {}
+        };
+        
         //Initializes and sets up clickable credits
         for(int i = 0, y = CREDIT_TEXT_ORIGINAL_Y - 11; i < clickableNames.length; ++i, y += 40) {
             //Initializes credit names
@@ -643,8 +691,34 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         credits.setLayout(null);
     }
     
-    private static void setUpSettingsItems(BufferedImage save, BufferedImage checkBox, BufferedImage tickMark)
-            throws IOException {
+    private static void setUpSettingsItems(BufferedImage save, BufferedImage checkBox, BufferedImage tickMark, BufferedImage cog, BufferedImage cogHover) throws IOException {
+        //Sets up settings button
+        settingsButton = new GradientButton(cog, cogHover, new Ellipse2D.Double(0, 0, 30, 30), 1168, 50, -10, -12, 30, 30) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if(onButton() && !credits.getExpanding())
+                    settings.setExpanding(true);
+            }
+    
+            @Override
+            public void mousePressed(MouseEvent e) {}
+    
+            @Override
+            public void mouseReleased(MouseEvent e) {}
+    
+            @Override
+            public void mouseEntered(MouseEvent e) {}
+    
+            @Override
+            public void mouseExited(MouseEvent e) {}
+    
+            @Override
+            public void mouseDragged(MouseEvent e) {}
+    
+            @Override
+            public void mouseMoved(MouseEvent e) {}
+        };
+        
         //Sets up error pop-up
         error = new PopUp(450, 200, 300, 300, 15, Color.BLACK, Color.ORANGE, 2) {
             @Override
@@ -913,6 +987,8 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         draggableButton.draw(g2d);
         musicButton.draw(g2d);
         sfxButton.draw(g2d);
+        settingsButton.draw(g2d);
+        creditsButton.draw(g2d);
         
         //Gets ArrayList of indices of checked values
         ArrayList<Integer> trueIndices = new ArrayList<>();
@@ -1068,12 +1144,15 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         if(normal == 0)
             return "0";
         if(normal >= 10)
-            return getScientific(tenMultiple + 1, normal / 10);
+            return getScientific(tenMultiple + 1, normal / 10.0);
         else if(normal < 1)
             return getScientific(tenMultiple - 1, normal * 10);
         else {
+            System.out.println(normal);
             BigDecimal bigNormal = new BigDecimal(normal);
             bigNormal = bigNormal.setScale(2, BigDecimal.ROUND_HALF_UP);
+            if(bigNormal.doubleValue() * Math.pow(10, tenMultiple) < Math.pow(10, -6))
+                return "0";
             return String.format("%.2f e %d", bigNormal.doubleValue(), tenMultiple);
         }
     }
@@ -1148,19 +1227,15 @@ class Runner extends JPanel implements ActionListener, KeyListener {
      */
     @Override
     public void keyPressed(KeyEvent e) {
-        switch(e.getKeyCode()) {
-            case KeyEvent.VK_ENTER:
-                if(settings.percentageExpanded() == 1.0 && error.getHeight() == 0 && error.getWidth() == 0)
+        if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+            if(settings.percentageExpanded() == 1.0) {
+                if(error.getHeight() == 0 && error.getWidth() == 0)
                     settingsSave();
-                break;
-            case KeyEvent.VK_S:
-                if(!credits.getExpanding())
-                    settings.setExpanding(true);
-                break;
-            case KeyEvent.VK_C:
-                if(!settings.getExpanding())
-                    credits.setExpanding(true);
-                break;
+                else if(error.percentageExpanded() == 1.0)
+                    error.setExpanding(false);
+            }
+            else if(credits.percentageExpanded() == 1.0)
+                credits.setExpanding(false);
         }
     }
     
