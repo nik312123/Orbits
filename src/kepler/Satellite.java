@@ -196,7 +196,7 @@ class Satellite {
         radialVelocity = Math.sqrt(Math.pow(velocity, 2) - Math.pow(transverseVelocity, 2));
         periapsis = getVisualRadius(0) * radiusMajor / radiusMajorVisual;
         apoapsis = getVisualRadius(Math.PI) * radiusMajor / radiusMajorVisual;
-        period = 2 * Math.PI * Math.sqrt(Math.pow(radiusMajor, 3)/(GRAVITATIONAL_CONSTANT * planet.getMass()));
+        period = 2 * Math.PI * Math.sqrt(Math.pow(radiusMajor, 3) / (GRAVITATIONAL_CONSTANT * planet.getMass()));
         
         /*
          * Originally multiplied by 0.002 since that is roughly the rate of the timer tick. The current time is then stored

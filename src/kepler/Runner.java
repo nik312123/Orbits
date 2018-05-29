@@ -689,7 +689,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             
             @Override
             public void mouseMoved(MouseEvent e) {}
-    
+            
             @Override
             public boolean onButton() {
                 return super.onButton() && error.percentageExpanded() != 1.0;
@@ -791,6 +791,12 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         double radiusOne = Double.parseDouble(radiusOneBase) * Math.pow(10, Integer.parseInt(radiusOnePower));
         double radiusTwo = Double.parseDouble(radiusTwoBase) * Math.pow(10, Integer.parseInt(radiusTwoPower));
         double planetMass = Double.parseDouble(planetMassBase) * Math.pow(10, Integer.parseInt(planetMassPower));
+        
+        //If the radii or planet mass is zero, an error is produces
+        if(radiusOne == 0 || radiusTwo == 0 || planetMass == 0) {
+            errorStart("Planet mass and orbital radii must be nonzero");
+            return;
+        }
         
         //If the satellite and planet would not crash
         if(!satellite.intersectsPlanet(radiusOne, radiusTwo)) {
@@ -971,9 +977,14 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 drawRightAlignedString(g, SETTINGS_STRINGS[i], y);
             
             //Sets NumberFields visible
-            for(NumberField nf : settingsInputBases) {
+            for(int i = 0; i < settingsInputBases.length; ++i) {
+                NumberField nf = settingsInputBases[i];
                 nf.setVisible(true);
                 g.drawString("x 10 ^", nf.getX() + nf.getWidth() + 9, nf.getY() + 30);
+                if(i != 2)
+                    g.drawString("m", nf.getX() + nf.getWidth() + 180, nf.getY() + 30);
+                else
+                    g.drawString("kg", nf.getX() + nf.getWidth() + 180, nf.getY() + 30);
             }
             for(NumberField nf : settingsInputPowers)
                 nf.setVisible(true);
