@@ -1003,7 +1003,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         int x = 1;
         for(int i = 0; i < trueIndices.size(); ++i) {
             int index = trueIndices.get(i);
-            String valueString = String.format(SHOWN_VALUES[index], getScientific(0, getValues.get(index).get()));
+            String valueString = String.format(SHOWN_VALUES[index], getScientific(0, getValues.get(index).get(), index <= 2));
             if(i != trueIndices.size() - 1)
                 valueString += ", ";
             g.drawString(valueString, x, 595);
@@ -1136,22 +1136,22 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     
     /**
      * Returns String in scientific notation from Double with the coefficient rounded to the hundredths
-     * @param tenMultiple Current power of ten
-     * @param normal      Current Double value
+     * @param tenMultiple       Current power of ten
+     * @param normal            Current Double value
+     * @param typeMinUntilZero  True if a minimum value is imposed (if value goes under, 0 is returned)
      * @return String in scientific notation with the coefficient rounded to the hundredths
      */
-    private static String getScientific(int tenMultiple, double normal) {
+    private static String getScientific(int tenMultiple, double normal, boolean typeMinUntilZero) {
         if(normal == 0)
             return "0";
         if(normal >= 10)
-            return getScientific(tenMultiple + 1, normal / 10.0);
+            return getScientific(tenMultiple + 1, normal / 10.0, typeMinUntilZero);
         else if(normal < 1)
-            return getScientific(tenMultiple - 1, normal * 10);
+            return getScientific(tenMultiple - 1, normal * 10, typeMinUntilZero);
         else {
-            System.out.println(normal);
             BigDecimal bigNormal = new BigDecimal(normal);
             bigNormal = bigNormal.setScale(2, BigDecimal.ROUND_HALF_UP);
-            if(bigNormal.doubleValue() * Math.pow(10, tenMultiple) < Math.pow(10, -6))
+            if(bigNormal.doubleValue() * Math.pow(10, tenMultiple) < Math.pow(10, -6) && typeMinUntilZero)
                 return "0";
             return String.format("%.2f e %d", bigNormal.doubleValue(), tenMultiple);
         }
