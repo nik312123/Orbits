@@ -896,7 +896,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 bigger = "Radius Two";
                 smaller = "Radius One";
             }
-            errorStart(String.format("The difference between the inputted radii is too large. You can either increase %s or decrease %s.", smaller, bigger));
+            errorStart(String.format("The difference between the inputted radii would cause a collision. You can either increase %s or decrease %s.", smaller, bigger));
         }
     }
     
@@ -1115,7 +1115,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             int lineIndex = 1;
             boolean drewOnLast = true;
             for(int i = 0; i < errorSplit.length; ++i) {
-                if(line.length() + errorSplit[i].length() + 1 < 34) {
+                if(line.length() + errorSplit[i].length() + 1 < 32) {
                     drewOnLast = false;
                     line.append(errorSplit[i]).append(" ");
                 }
