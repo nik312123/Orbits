@@ -1151,6 +1151,14 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         else {
             BigDecimal bigNormal = new BigDecimal(normal);
             bigNormal = bigNormal.setScale(2, BigDecimal.ROUND_HALF_UP);
+            if(bigNormal.doubleValue() >= 10) {
+                bigNormal = bigNormal.divide(BigDecimal.TEN, BigDecimal.ROUND_HALF_UP);
+                ++tenMultiple;
+            }
+            else if(bigNormal.doubleValue() < 1) {
+                bigNormal = bigNormal.multiply(BigDecimal.TEN);
+                --tenMultiple;
+            }
             if(bigNormal.doubleValue() * Math.pow(10, tenMultiple) < Math.pow(10, -6) && typeMinUntilZero)
                 return "0";
             return String.format("%.2f e %d", bigNormal.doubleValue(), tenMultiple);
