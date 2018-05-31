@@ -159,7 +159,7 @@ class Satellite {
     }
     
     /**
-     * Changes the instantaneous radius based on the orbitAngle using r = (2 * h * b^2 + sqrt(2) * a * b * sqrt(a^2 * (1 - cos(2 * theta)) + b^2 * (1 + cos(2 * theta)) + h^2 * (cos(2 * theta) - 1))) / (2 * (a^2 * sin^2(theta) + b^2cos^2(theta))
+     * Changes the instantaneous radius based on the orbitAngle using r = (2 * h * b^2 * cos(theta) + sqrt(2) * a * b * sqrt(a^2 * (1 - cos(2 * theta)) + b^2 * (1 + cos(2 * theta)) + h^2 * (cos(2 * theta) - 1))) / (2 * (a^2 * sin^2(theta) + b^2cos^2(theta))
      * (Modified from the usual ab/sqrt(a^2sin^2(theta) + b^2cos^2(theta)) to shift the ellipse such that the radius is relative to the right focus)
      */
     private double getVisualRadius(double theta) {

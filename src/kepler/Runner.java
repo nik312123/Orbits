@@ -1148,9 +1148,11 @@ class Runner extends JPanel implements ActionListener, KeyListener {
      * @return String in scientific notation with the coefficient rounded to the hundredths
      */
     private static String getScientific(int tenMultiple, double normal) {
-        if(normal == 0)
+        if(Double.isInfinite(normal))
+            return "Very large";
+        else if(Double.isNaN(normal) || normal == 0)
             return "0";
-        if(normal >= 10)
+        else if(normal >= 10)
             return getScientific(tenMultiple + 1, normal / 10.0);
         else if(normal < 1)
             return getScientific(tenMultiple - 1, normal * 10);
