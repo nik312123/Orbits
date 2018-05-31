@@ -581,27 +581,27 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         creditsButton = new GradientButton(about, aboutHover, new Ellipse2D.Double(0, 0, 30, 31), 1168, 90, -15, -16, 30, 31) {
             @Override
             public void mouseClicked(MouseEvent e) {
-        
+            
             }
-    
+            
             @Override
             public void mousePressed(MouseEvent e) {
                 if(onButton() && !settings.getExpanding())
                     credits.setExpanding(true);
             }
-    
+            
             @Override
             public void mouseReleased(MouseEvent e) {}
-    
+            
             @Override
             public void mouseEntered(MouseEvent e) {}
-    
+            
             @Override
             public void mouseExited(MouseEvent e) {}
-    
+            
             @Override
             public void mouseDragged(MouseEvent e) {}
-    
+            
             @Override
             public void mouseMoved(MouseEvent e) {}
         };
@@ -699,22 +699,22 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 if(onButton() && !credits.getExpanding())
                     settings.setExpanding(true);
             }
-    
+            
             @Override
             public void mousePressed(MouseEvent e) {}
-    
+            
             @Override
             public void mouseReleased(MouseEvent e) {}
-    
+            
             @Override
             public void mouseEntered(MouseEvent e) {}
-    
+            
             @Override
             public void mouseExited(MouseEvent e) {}
-    
+            
             @Override
             public void mouseDragged(MouseEvent e) {}
-    
+            
             @Override
             public void mouseMoved(MouseEvent e) {}
         };
@@ -1003,7 +1003,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         int x = 1;
         for(int i = 0; i < trueIndices.size(); ++i) {
             int index = trueIndices.get(i);
-            String valueString = String.format(SHOWN_VALUES[index], getScientific(0, getValues.get(index).get(), index <= 2));
+            String valueString = String.format(SHOWN_VALUES[index], getScientific(0, getValues.get(index).get()));
             if(i != trueIndices.size() - 1)
                 valueString += ", ";
             g.drawString(valueString, x, 595);
@@ -1136,18 +1136,17 @@ class Runner extends JPanel implements ActionListener, KeyListener {
     
     /**
      * Returns String in scientific notation from Double with the coefficient rounded to the hundredths
-     * @param tenMultiple       Current power of ten
-     * @param normal            Current Double value
-     * @param typeMinUntilZero  True if a minimum value is imposed (if value goes under, 0 is returned)
+     * @param tenMultiple Current power of ten
+     * @param normal      Current Double value
      * @return String in scientific notation with the coefficient rounded to the hundredths
      */
-    private static String getScientific(int tenMultiple, double normal, boolean typeMinUntilZero) {
+    private static String getScientific(int tenMultiple, double normal) {
         if(normal == 0)
             return "0";
         if(normal >= 10)
-            return getScientific(tenMultiple + 1, normal / 10.0, typeMinUntilZero);
+            return getScientific(tenMultiple + 1, normal / 10.0);
         else if(normal < 1)
-            return getScientific(tenMultiple - 1, normal * 10, typeMinUntilZero);
+            return getScientific(tenMultiple - 1, normal * 10);
         else {
             BigDecimal bigNormal = new BigDecimal(normal);
             bigNormal = bigNormal.setScale(2, BigDecimal.ROUND_HALF_UP);
@@ -1159,8 +1158,6 @@ class Runner extends JPanel implements ActionListener, KeyListener {
                 bigNormal = bigNormal.multiply(BigDecimal.TEN);
                 --tenMultiple;
             }
-            if(bigNormal.doubleValue() * Math.pow(10, tenMultiple) < Math.pow(10, -6) && typeMinUntilZero)
-                return "0";
             return String.format("%.2f e %d", bigNormal.doubleValue(), tenMultiple);
         }
     }

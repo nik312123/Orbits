@@ -9,6 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
 
 /**
  * The class that represents the satellite that orbits the planet
@@ -193,7 +194,12 @@ class Satellite {
         //Calculates values that can be displayed using settings options
         velocity = Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() * (2 / radius - 1 / radiusMajor));
         transverseVelocity = getAngularVelocity() * radius;
-        radialVelocity = Math.sqrt(Math.pow(velocity, 2) - Math.pow(transverseVelocity, 2));
+        if(new BigDecimal(velocity).setScale(10, BigDecimal.ROUND_HALF_UP).equals(new BigDecimal(transverseVelocity).setScale(10, BigDecimal.ROUND_HALF_UP)))
+            radialVelocity = 0;
+        else
+            radialVelocity = Math.sqrt(Math.pow(velocity, 2) - Math.pow(transverseVelocity, 2));
+        if(Double.isNaN(radialVelocity))
+            radialVelocity = 0;
         periapsis = getVisualRadius(0) * radiusMajor / radiusMajorVisual;
         apoapsis = getVisualRadius(Math.PI) * radiusMajor / radiusMajorVisual;
         period = 2 * Math.PI * Math.sqrt(Math.pow(radiusMajor, 3) / (GRAVITATIONAL_CONSTANT * planet.getMass()));
