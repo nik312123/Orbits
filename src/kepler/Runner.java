@@ -263,7 +263,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         try {
             drawingFont = Font.createFont(Font.TRUETYPE_FONT, getResource("/freeSans.ttf").openStream()).deriveFont(20f);
             drawingFontSettings = drawingFont.deriveFont(30f);
-            drawingFontValues = drawingFont.deriveFont(12f);
+            drawingFontValues = drawingFont.deriveFont(11f);
         }
         catch(FontFormatException e) {
             e.printStackTrace();
