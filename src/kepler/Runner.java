@@ -724,16 +724,7 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             @Override
             public void onClick() {
                 //Once the error pop-up is clicked, reenables NumberFields
-                for(NumberField nf : settingsInputBases) {
-                    nf.setEditable(true);
-                    nf.setHighlighter(defaultHighlighter);
-                    nf.setCaretColor(Color.BLACK);
-                }
-                for(NumberField nf : settingsInputPowers) {
-                    nf.setEditable(true);
-                    nf.setHighlighter(defaultHighlighter);
-                    nf.setCaretColor(Color.BLACK);
-                }
+                errorClick();
             }
         };
         
@@ -958,6 +949,22 @@ class Runner extends JPanel implements ActionListener, KeyListener {
         g2d.drawImage(current, 0, 0, null);
         optimized.setAccelerationPriority(1);
         return optimized;
+    }
+    
+    /**
+     * Sets all the NumberFields to their editable, default states
+     */
+    private static void errorClick() {
+        for(NumberField nf : settingsInputBases) {
+            nf.setEditable(true);
+            nf.setHighlighter(defaultHighlighter);
+            nf.setCaretColor(Color.BLACK);
+        }
+        for(NumberField nf : settingsInputPowers) {
+            nf.setEditable(true);
+            nf.setHighlighter(defaultHighlighter);
+            nf.setCaretColor(Color.BLACK);
+        }
     }
     
     /**
@@ -1236,8 +1243,10 @@ class Runner extends JPanel implements ActionListener, KeyListener {
             if(settings.percentageExpanded() == 1.0) {
                 if(error.getHeight() == 0 && error.getWidth() == 0)
                     settingsSave();
-                else if(error.percentageExpanded() == 1.0)
+                else if(error.percentageExpanded() == 1.0) {
                     error.setExpanding(false);
+                    errorClick();
+                }
             }
             else if(credits.percentageExpanded() == 1.0)
                 credits.setExpanding(false);
