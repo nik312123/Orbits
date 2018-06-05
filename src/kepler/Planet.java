@@ -17,6 +17,16 @@ class Planet {
     private static final int PLANET_HEIGHT_WIDTH = 75;
     
     /**
+     * The current index of the planet pictures
+     */
+    private int planetFrame = 287;
+    
+    /**
+     * Used to determine when to shift the planetFrame to the next
+     */
+    private int planetCounter = 0;
+    
+    /**
      * The mass in kg of the planet
      */
     private double mass;
@@ -29,7 +39,7 @@ class Planet {
     /**
      * Image that shows the planet being orbited (actually a picture of a star but whatever)
      */
-    private static BufferedImage planetImage;
+    private static BufferedImage[] planetImage = new BufferedImage[288];
     
     /**
      * The ellipse representing the planet that the satellite orbits
@@ -46,8 +56,10 @@ class Planet {
      * @param m The mass of the planet
      */
     Planet(double m) {
-        if(Runner.isFirstTime())
-            planetImage = Runner.getCompatibleImage("/star.png");
+        if(Runner.isFirstTime()) {
+            for(int i = 0; i < planetImage.length; ++i)
+                planetImage[i] = Runner.getCompatibleImage("/star/star" + i + ".png");
+        }
         mass = m;
     }
     
@@ -60,8 +72,16 @@ class Planet {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         satellite.drawOrbit(g2d);
         AffineTransform trans = new AffineTransform();
-        trans.translate(centerX - planetImage.getWidth() / 2, centerY - planetImage.getHeight() / 2);
-        g2d.drawImage(planetImage, trans, null);
+        trans.translate(centerX - planetImage[planetFrame].getWidth() / 2, centerY - planetImage[planetFrame].getHeight() / 2);
+        g2d.drawImage(planetImage[planetFrame], trans, null);
+        
+        //If the planet counter increases to a certain number, the planet frame is shifted and the planet counter is reset
+        if(++planetCounter % 9 == 0) {
+            //The planet frame is reset after reaching the last frame
+            if(--planetFrame == -1)
+                planetFrame = 287;
+            planetCounter = 0;
+        }
     }
     
     /**

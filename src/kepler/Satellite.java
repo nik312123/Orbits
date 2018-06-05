@@ -36,6 +36,11 @@ class Satellite {
     private double orbitAngle = 0;
     
     /**
+     * The rate at which the satellite rotates about its own axis
+     */
+    private double axisAngle = 0;
+    
+    /**
      * The instantaneous distance between the center of the elliptical orbit and the satellite in pixels
      */
     private double visualRadius;
@@ -184,11 +189,14 @@ class Satellite {
         radius = visualRadius * radiusMajor / radiusMajorVisual;
         
         /*
-         * Transformation made to get x and y position of satellite based on the radius and orbitAngle with the origin at the right
-         * focus and used to draw the position of the satellite
+         * Transformations made to get x and y position of satellite based on the radius and orbitAngle with the origin at the
+         * right focus, rotate the satellite object on its axis, and therefore used to draw the position and rotation of
+         * the satellite
          */
         AffineTransform trans = new AffineTransform();
         trans.translate(visualRadius * Math.cos(orbitAngle) + planet.getCenterX() - satelliteImage.getWidth() / 2.0, visualRadius * -Math.sin(orbitAngle) + planet.getCenterY() - satelliteImage.getHeight() / 2.0);
+        axisAngle += -Math.PI/200;
+        trans.rotate(axisAngle, satelliteImage.getWidth()/2.0, satelliteImage.getHeight()/2.0);
         g2d.drawImage(satelliteImage, trans, null);
         
         //Calculates values that can be displayed using settings options
