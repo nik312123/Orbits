@@ -8,6 +8,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 
@@ -202,7 +203,9 @@ class Satellite {
         //Calculates values that can be displayed using settings options
         velocity = Math.sqrt(GRAVITATIONAL_CONSTANT * planet.getMass() * (2 / radius - 1 / radiusMajor));
         transverseVelocity = getAngularVelocity() * radius;
-        if(new BigDecimal(velocity).setScale(10, BigDecimal.ROUND_HALF_UP).equals(new BigDecimal(transverseVelocity).setScale(10, BigDecimal.ROUND_HALF_UP)))
+        Point2D scientificVelocity = getScientific(velocity, 0);
+        Point2D scientificTransverseVelocity = getScientific(transverseVelocity, 0);
+        if(scientificVelocity.getY() == scientificTransverseVelocity.getY() && new BigDecimal(scientificVelocity.getX()).setScale(10, BigDecimal.ROUND_HALF_UP).equals(new BigDecimal(scientificTransverseVelocity.getX()).setScale(10, BigDecimal.ROUND_HALF_UP)))
             radialVelocity = 0;
         else
             radialVelocity = Math.sqrt(Math.pow(velocity, 2) - Math.pow(transverseVelocity, 2));
@@ -231,6 +234,29 @@ class Satellite {
         //If the orbitAngle is greater than 2π, subtract 2π since there is no need to let it have a chance of overflowing
         if(orbitAngle >= 2 * Math.PI)
             orbitAngle -= 2 * Math.PI;
+    }
+    
+    private Point2D getScientific(double number, int power) {
+        if(Double.isInfinite(number))
+            return new Point2D.Double(Double.POSITIVE_INFINITY, 0);
+        else if(Double.isNaN(number) || number == 0)
+            return new Point2D.Double(0, 0);
+        else if(number >= 10)
+            return getScientific(number / 10.0, power + 1);
+        else if(number < 1)
+            return getScientific(number * 10, power - 1);
+        else {
+            BigDecimal bignumber = new BigDecimal(number);
+            if(bignumber.doubleValue() >= 10) {
+                bignumber = bignumber.divide(BigDecimal.TEN, BigDecimal.ROUND_HALF_UP);
+                ++power;
+            }
+            else if(bignumber.doubleValue() < 1) {
+                bignumber = bignumber.multiply(BigDecimal.TEN);
+                --power;
+            }
+            return new Point2D.Double(bignumber.doubleValue(), power);
+        }
     }
     
     /**
