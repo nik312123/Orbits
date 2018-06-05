@@ -195,7 +195,7 @@ class Satellite {
          */
         AffineTransform trans = new AffineTransform();
         trans.translate(visualRadius * Math.cos(orbitAngle) + planet.getCenterX() - satelliteImage.getWidth() / 2.0, visualRadius * -Math.sin(orbitAngle) + planet.getCenterY() - satelliteImage.getHeight() / 2.0);
-        axisAngle += -Math.PI/200;
+        axisAngle += -Math.PI/400;
         trans.rotate(axisAngle, satelliteImage.getWidth()/2.0, satelliteImage.getHeight()/2.0);
         g2d.drawImage(satelliteImage, trans, null);
         
