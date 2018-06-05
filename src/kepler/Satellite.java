@@ -205,6 +205,8 @@ class Satellite {
         transverseVelocity = getAngularVelocity() * radius;
         Point2D scientificVelocity = getScientific(velocity, 0);
         Point2D scientificTransverseVelocity = getScientific(transverseVelocity, 0);
+        
+        //If the velocity and transverse velocity are approximately equal, set the radial velocity to 0
         if(scientificVelocity.getY() == scientificTransverseVelocity.getY() && new BigDecimal(scientificVelocity.getX()).setScale(10, BigDecimal.ROUND_HALF_UP).equals(new BigDecimal(scientificTransverseVelocity.getX()).setScale(10, BigDecimal.ROUND_HALF_UP)))
             radialVelocity = 0;
         else
@@ -236,6 +238,12 @@ class Satellite {
             orbitAngle -= 2 * Math.PI;
     }
     
+    /**
+     * Returns a point that contains the base and the power of 10 for scientific notation
+     * @param number The number that is divided or multiplied by a power of ten to get it within 0 <= n < 10
+     * @param power  The power of ten that the base is being multiplied by to make the overall number
+     * @return       A Point2D object with the x-coordinate being the base and the y-cooordinate being the power of 10
+     */
     private Point2D getScientific(double number, int power) {
         if(Double.isInfinite(number))
             return new Point2D.Double(Double.POSITIVE_INFINITY, 0);
